@@ -32,6 +32,8 @@
     <button class="tab" type="button" data-act="tab" data-v="visitas" data-tip="Auditorias" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-visitas"/></svg><span class="lbl">Auditorias</span></button>
     <button class="tab" type="button" data-act="tab" data-v="validacao" data-tip="Validação" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-validacao"/></svg><span class="lbl">Validação</span><span class="ct ct-val" hidden>0</span></button>
     <button class="tab" type="button" data-act="tab" data-v="pendencias" data-tip="Central de Pendências" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-pend"/></svg><span class="lbl">Central de Pendências</span><span class="ct ct-pend" hidden>0</span></button>
+    <button class="tab" type="button" data-act="tab" data-v="parques" data-tip="Parques" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-parque"/></svg><span class="lbl">Parques</span></button>
+    <button class="tab" type="button" data-act="tab" data-v="relatorios" data-tip="Relatórios" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-envio"/></svg><span class="lbl">Relatórios</span></button>
   </nav>
   <div class="side-bottom">
     <button class="tab" type="button" data-act="tab" data-v="usuarios" data-tip="Configurações" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-cfg"/></svg><span class="lbl">Configurações</span><span class="ct soft ct-usr" hidden>0</span></button>
@@ -56,7 +58,7 @@
   <button class="tab" type="button" data-act="tab" data-v="visitas" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-visitas"/></svg>Auditorias</button>
   <button class="tab" type="button" data-act="tab" data-v="validacao" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-validacao"/></svg>Validação<span class="ct ct-val" hidden>0</span></button>
   <button class="tab" type="button" data-act="tab" data-v="pendencias" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-pend"/></svg>Pendências<span class="ct ct-pend" hidden>0</span></button>
-  <button class="tab" type="button" data-act="tab" data-v="usuarios" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-cfg"/></svg>Ajustes<span class="ct soft ct-usr" hidden>0</span></button>
+  <button class="tab" type="button" data-act="mais" data-v="mais" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-mais"/></svg>Mais<span class="ct soft ct-usr" hidden>0</span></button>
 </nav>
 
 <div id="foot-slot"></div>
@@ -101,6 +103,8 @@
   <symbol id="i-cfg" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
   <symbol id="i-parque" viewBox="0 0 24 24"><path d="M3 21h18M5 21V10l7-5 7 5v11"/><path d="M10 21v-6h4v6"/></symbol>
   <symbol id="i-pend" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2"/><circle cx="5" cy="12" r="1.4"/><circle cx="5" cy="18" r="1.4"/></symbol>
+  <symbol id="i-mais" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></symbol>
+  <symbol id="i-sino" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16Z"/><path d="M10 20a2 2 0 0 0 4 0"/></symbol>
   <symbol id="i-coroa" viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></symbol>
 </svg>
 
@@ -303,14 +307,14 @@ function updateCounts(){
 /* ===================== Rotas ===================== */
 function route(){
   if(S.edit && S.db){ clearTimeout(S.saveT); const e = S.edit; S.db.doc('visitas/' + e.id).set(clone(e.d)).catch(() => toast('A última alteração da visita não foi salva.')); }
-  const h = location.hash.slice(1); S.tab = ['painel','visitas'].concat(S.me.admin ? ['validacao','pendencias','usuarios'] : []).includes(h) ? h : 'painel'; S.edit = null; S.rep = null; render(); }
+  const h = location.hash.slice(1); S.tab = ['painel','visitas'].concat(S.me.admin ? ['validacao','pendencias','parques','relatorios','usuarios'] : []).includes(h) ? h : 'painel'; if(S.tab === 'parques' && !S.manterParque) S.parque = null; S.manterParque = false; S.edit = null; S.rep = null; render(); }
 window.addEventListener('hashchange', route);
 function go(tab){ if(location.hash.slice(1) === tab){ route(); } else location.hash = tab; }
 
 function render(){
   document.body.classList.remove('side-over');
   document.body.classList.toggle('editing', !!S.edit);
-  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String(b.dataset.v === S.tab && !S.edit)));
+  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String((b.dataset.v === S.tab || (b.dataset.v === 'mais' && ['parques','relatorios','notificacoes','usuarios'].includes(S.tab))) && !S.edit)));
   $('#foot-slot').innerHTML = '';
   if(S.edit) return renderEditor();
   if(S.rep) return renderReport();
@@ -319,6 +323,8 @@ function render(){
   else if(S.tab === 'visitas') renderVisitas();
   else if(S.tab === 'usuarios') renderUsuarios();
   else if(S.tab === 'pendencias') renderPendencias();
+  else if(S.tab === 'parques') renderParques();
+  else if(S.tab === 'relatorios') renderRelatorios();
   else renderValidacao();
 }
 
@@ -709,6 +715,7 @@ function renderReport(){
       <button class="btn icon" type="button" data-act="fechar" id="btn-fechar-rep" aria-label="Voltar" title="Voltar">${ic('left')}</button>
       <div style="min-width:0;flex:1"><div class="row" style="gap:8px;margin-bottom:4px">${pill(ST[st][0], ST[st][1])}${pill(sit, sitCls(sit))}</div><h1>${esc(evName(v.evento))}</h1>
         <div class="ed-meta"><span class="mono">${esc(v.codigo)}</span><span>${ic('user','sm')} ${esc(quem(v))}</span><span>Líder: ${esc(v.lider || '—')}</span>${(v.atendentes||[]).filter(Boolean).length ? `<span>Atendimento: <b style="color:var(--ink)">${esc(v.atendentes.filter(Boolean).join(', '))}</b></span>` : ''}<span>${ic('envio','sm')} ${fdt(v.enviadoEm)}</span></div></div>
+      ${st !== 'rascunho' ? `<button class="btn" type="button" data-act="pdf-aud" data-id="${esc(v._id)}">${ic('envio')}Gerar PDF</button>` : ''}
     </div>
     ${st === 'devolvida' && w.obs ? `<div class="banner warn"><b>Devolvida ao auditor:</b> ${esc(w.obs)}</div>` : ''}
     <div class="grid2">
@@ -1813,15 +1820,7 @@ function evolucaoHtml(D){
   else { const mes = new Map(); D.auds.forEach(v => { const i = indice(v); if(i == null) return; const d = new Date(v.enviadoEm); const k = d.getFullYear() * 12 + d.getMonth(); if(!mes.has(k)) mes.set(k, []); mes.get(k).push(i); });
     [...mes.entries()].sort((a, b) => a[0] - b[0]).forEach(([k, arr]) => { const y = arr.reduce((a, b) => a + b, 0) / arr.length; pts.push({x: new Date(Math.floor(k / 12), k % 12, 15).getTime(), y: Math.round(y * 10) / 10, t: `${p2(k % 12 + 1)}/${Math.floor(k / 12)} · média de ${arr.length} auditoria(s)`}); }); }
   const parques = [...D.porParque.keys()].map(id => [id, evName(id)]).sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
-  const W = 560, H = 220, L = 34, R = 12, T = 12, B = 30;
-  let svg = '';
-  if(pts.length){
-    const x0 = pts[0].x, x1 = pts[pts.length - 1].x; const sx = x => pts.length === 1 ? (L + (W - L - R) / 2) : L + (x - x0) / (x1 - x0) * (W - L - R); const sy = y => T + (5 - y) / 5 * (H - T - B);
-    const grid = [0,1,2,3,4,5].map(g => `<line x1="${L}" x2="${W - R}" y1="${sy(g)}" y2="${sy(g)}" class="${g === 3 ? 'ref' : 'gl'}"/><text x="${L - 8}" y="${sy(g) + 4}" class="ax" text-anchor="end">${g}</text>`).join('');
-    const path = pts.map((p, i) => `${i ? 'L' : 'M'}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' ');
-    const lbl = [pts[0], pts[pts.length - 1]].filter((p, i, a) => i === 0 || p !== a[0]).map((p, i) => `<text x="${sx(p.x)}" y="${H - 8}" class="ax" text-anchor="${pts.length === 1 ? 'middle' : i ? 'end' : 'start'}">${fd(p.x)}</text>`).join('');
-    svg = `<svg viewBox="0 0 ${W} ${H}" class="ln" role="img" aria-label="Evolução do índice PEX">${grid}<path d="${path}" class="ln-p"/>${pts.map(p => `<g class="pt"><circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="12" class="hit"/><circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="4.5" class="dot"/><title>${esc(p.t)}: índice ${nf1(p.y)}</title></g>`).join('')}${lbl}</svg>`;
-  }
+  const svg = pts.length ? lineSvg(pts) : '';
   return `<section class="card"><div class="card-h"><h2>Evolução do índice</h2><label class="f" style="min-width:180px"><span class="sr-only">Parque</span><select data-dpq aria-label="Parque da evolução"><option value="">Média mensal (todos)</option>${parques.map(([id, n]) => `<option value="${esc(id)}"${pq === id ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select></label></div>
     ${pts.length ? svg + `<p class="note" style="margin:0">${pq ? 'Cada ponto é uma auditoria do parque.' : 'Cada ponto é a média das auditorias do mês.'} Linha tracejada = 3, Adequado.</p>` : `<div class="empty">${ic('painel')}Sem auditorias para mostrar a evolução.</div>`}
   </section>`;
@@ -1870,6 +1869,239 @@ document.addEventListener('click', ev => {
 document.addEventListener('change', e => { const t = e.target; if(!t.dataset) return;
   if(t.dataset.df){ S.df = {...(S.df || {}), [t.dataset.df]: t.value}; renderPainel(); }
   else if(t.dataset.dpq !== undefined){ S.dpq = t.value; renderPainel(); } });
+
+/* ===================== Fase 5 · Parques, histórico e relatórios ===================== */
+function lineSvg(pts, rotulo){
+  const W = 560, H = 220, L = 34, R = 12, T = 12, B = 30;
+  const x0 = pts[0].x, x1 = pts[pts.length - 1].x; const sx = x => pts.length === 1 ? (L + (W - L - R) / 2) : L + (x - x0) / (x1 - x0) * (W - L - R); const sy = y => T + (5 - y) / 5 * (H - T - B);
+  const grid = [0,1,2,3,4,5].map(g => `<line x1="${L}" x2="${W - R}" y1="${sy(g)}" y2="${sy(g)}" class="${g === 3 ? 'ref' : 'gl'}"/><text x="${L - 8}" y="${sy(g) + 4}" class="ax" text-anchor="end">${g}</text>`).join('');
+  const path = pts.map((p, i) => `${i ? 'L' : 'M'}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' ');
+  const lbl = [pts[0], pts[pts.length - 1]].filter((p, i, a) => i === 0 || p !== a[0]).map((p, i) => `<text x="${sx(p.x)}" y="${H - 8}" class="ax" text-anchor="${pts.length === 1 ? 'middle' : i ? 'end' : 'start'}">${fd(p.x)}</text>`).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" class="ln" role="img" aria-label="${esc(rotulo || 'Evolução do índice PEX')}">${grid}<path d="${path}" class="ln-p"/>${pts.map(p => `<g class="pt"><circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="12" class="hit"/><circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="4.5" class="dot"/><title>${esc(p.t)}: índice ${nf1(p.y)}</title></g>`).join('')}${lbl}</svg>`;
+}
+function fotosDaVisita(v){
+  const fs = []; const add = (ids, origem) => (ids || []).forEach(id => fs.push({id, origem}));
+  Object.entries(v.fotosObr || {}).forEach(([k, ids]) => add(ids, FOTO_INDEX[k] || 'Foto obrigatória'));
+  Object.entries(v.itens || {}).forEach(([k, a]) => add(a.fotos, (ITEM_INDEX[k] || {}).t || 'Item'));
+  Object.values(v.extras && typeof v.extras === 'object' ? v.extras : {}).forEach(arr => (Array.isArray(arr) ? arr : []).forEach(x => add(x.fotos, 'Outro local: ' + (x.local || ''))));
+  (v.estoque || []).forEach(r => add(r.fotos, 'Estoque: ' + (r.sku || '')));
+  (v.ocorrencias || []).forEach(o => add(o.fotos, 'Ocorrência'));
+  const vistos = new Set(); return fs.filter(f => !vistos.has(f.id) && vistos.add(f.id));
+}
+function ncSet(v){ return new Set(Object.entries(v.itens || {}).filter(([k, a]) => a.r === 'nc').map(([k]) => k)); }
+function compararAuditorias(atual, ant){
+  const a = ncSet(atual), b = ncSet(ant);
+  return {eixos: EIXOS.map(([k, t]) => ({k, t, ant: notaN(ant, k), at: notaN(atual, k)})),
+    resolvidos: [...b].filter(x => !a.has(x)), reincidentes: [...a].filter(x => b.has(x)), novos: [...a].filter(x => !b.has(x)),
+    ocNovas: (atual.ocorrencias || []).length, idxAnt: indice(ant), idxAt: indice(atual)};
+}
+
+/* ---------- Lista de parques ---------- */
+function renderParques(){
+  if(!S.me.admin){ go('painel'); return; }
+  if(S.parque){ renderParque(S.parque); return; }
+  const last = ultimaPorEvento(); const q = (S.plq || '').toLowerCase(); const soc = S.plsoc || '';
+  const linhas = [...S.eventos.entries()].map(([id, e]) => { const v = last.get(id); const acs = [...S.acoes.values()].filter(a => a.evento === id);
+    return {id, e, v, idx: v ? indice(v) : null, sit: v ? situacao(v) : 'Sem auditoria', n: submetidas().filter(x => x.evento === id).length, ab: acs.filter(acAbertaSt).length, at: acs.filter(acAtrasada).length}; })
+    .filter(r => (!q || (r.e.nome + ' ' + (r.e.franquia || '')).toLowerCase().includes(q)) && (!soc || r.e.franquia === soc))
+    .sort((a, b) => a.e.nome.localeCompare(b.e.nome, 'pt-BR'));
+  const socios = [...new Set([...S.eventos.values()].map(e => e.franquia).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR', {numeric: true}));
+  $('#main').innerHTML = `<div class="stack">
+    ${pageHead('Parques', 'Histórico individual de cada parque: auditorias, notas, ocorrências, ações e fotos.')}
+    <div class="toolbar"><div class="search">${ic('busca')}<input type="search" id="plq" data-plq placeholder="Buscar parque ou sócio" value="${esc(S.plq || '')}" aria-label="Buscar parque"></div>
+      <select data-plsoc aria-label="Filtrar por sócio"><option value="">Todos os sócios</option>${socios.map(s => `<option${soc === s ? ' selected' : ''}>${esc(s)}</option>`).join('')}</select></div>
+    <div class="dt-wrap ac-dt"><table><thead><tr><th>Parque</th><th>Sócio</th><th class="r">Índice</th><th>Última auditoria</th><th>Situação</th><th class="r">Auditorias</th><th class="r">Ações abertas</th></tr></thead><tbody>
+      ${linhas.map(r => `<tr class="click" data-act="parque-abrir" data-id="${esc(r.id)}" tabindex="0"><td><b>${esc(r.e.nome)}</b></td><td>${esc(r.e.franquia || '—')}</td><td class="r"><b>${nf1(r.idx)}</b></td>
+        <td>${r.v ? `${fd(r.v.enviadoEm)}<span class="sub">há ${diasDesde(r.v.enviadoEm)} dia(s)</span>` : '<span class="muted">Nunca auditado</span>'}</td><td>${pill(r.sit, sitCls(r.sit))}</td><td class="r">${r.n}</td>
+        <td class="r">${r.ab}${r.at ? ` <span class="sub" style="color:var(--bad)">${r.at} atrasada(s)</span>` : ''}</td></tr>`).join('') || '<tr><td colspan="7" class="muted">Nenhum parque encontrado.</td></tr>'}
+    </tbody></table></div>
+    <div class="vlist ac-cards">${linhas.map(r => `<button type="button" class="vitem" data-act="parque-abrir" data-id="${esc(r.id)}"><span class="t">${esc(r.e.nome)}</span>${pill(r.sit, sitCls(r.sit))}
+      <span class="s"><span>Índice <b style="color:var(--ink)">${nf1(r.idx)}</b></span><span>${r.v ? 'Última ' + fd(r.v.enviadoEm) : 'Nunca auditado'}</span><span>${r.ab} ação(ões) aberta(s)</span></span></button>`).join('')}</div>
+  </div>`;
+}
+
+/* ---------- Página do parque ---------- */
+function renderParque(id){
+  const e = S.eventos.get(id); if(!e){ S.parque = null; renderParques(); return; }
+  const auds = submetidas().filter(v => v.evento === id).sort((a, b) => a.enviadoEm - b.enviadoEm);
+  const u = auds[auds.length - 1], ant = auds[auds.length - 2];
+  const acs = [...S.acoes.values()].filter(a => a.evento === id).sort((a, b) => b.numero - a.numero);
+  const abertas = acs.filter(acAbertaSt), concl = acs.filter(a => a.status === 'concluida');
+  const pts = auds.map(v => ({x: v.enviadoEm, y: indice(v), t: `${fd(v.enviadoEm)} · ${v.codigo}`})).filter(p => p.y != null);
+  const rec = new Map(); auds.forEach(v => ncSet(v).forEach(k => rec.set(k, (rec.get(k) || 0) + 1)));
+  const recL = [...rec.entries()].filter(([k, n]) => n >= 2 && ITEM_INDEX[k]).sort((a, b) => b[1] - a[1]);
+  const fotos = []; auds.slice().reverse().forEach(v => fotosDaVisita(v).forEach(f => fotos.push({...f, data: v.enviadoEm})));
+  acs.forEach(a => (a.evidencias || []).forEach(ev => (ev.fotos || []).forEach(fid => fotos.push({id: fid, origem: 'Evidência ' + acCod(a), data: ev.em ? new Date(ev.em).getTime() : 0}))));
+  const cmp = u && ant ? compararAuditorias(u, ant) : null;
+  const sit = u ? situacao(u) : 'Sem auditoria';
+  const dIdx = cmp && cmp.idxAt != null && cmp.idxAnt != null ? Math.round((cmp.idxAt - cmp.idxAnt) * 10) / 10 : null;
+  $('#main').innerHTML = `<div class="stack">
+    <div class="ed-top"><button class="btn icon" type="button" data-act="parque-voltar" aria-label="Voltar para Parques" data-tip="Voltar">${ic('left')}</button>
+      <div style="min-width:0;flex:1"><div class="row" style="gap:8px;margin-bottom:4px">${pill(sit, sitCls(sit))}${e.franquia ? pill('Sócio ' + e.franquia, 'plain') : ''}${e.inflaveis ? pill('Com infláveis', 'plain') : ''}</div><h1>${esc(e.nome)}</h1>
+        <p class="lead" style="margin-top:2px">${auds.length} auditoria(s) · ${acs.length} ação(ões) corretiva(s)</p></div>
+      ${u ? `<button class="btn" type="button" data-act="pdf-aud" data-id="${esc(u._id)}">${ic('envio')}PDF da última auditoria</button>` : ''}</div>
+    <section class="kpis">
+      <div class="kpi"><small>Último índice PEX</small><b>${nf1(u ? indice(u) : null)}</b><i>${dIdx == null ? (u ? ESCALA[Math.round(indice(u) ?? 0)] : 'sem auditoria') : (dIdx >= 0 ? '▲ ' : '▼ ') + nf1(Math.abs(dIdx)) + ' vs anterior'}</i></div>
+      <div class="kpi"><small>Última auditoria</small><b style="font-size:20px">${u ? fd(u.enviadoEm) : '—'}</b><i>${u ? 'há ' + diasDesde(u.enviadoEm) + ' dia(s) · ' + esc(quem(u)) : 'nunca auditado'}</i></div>
+      <button type="button" class="kpi${abertas.length ? ' warn' : ''}" data-act="parque-acoes" data-id="${esc(id)}"><small>Ações abertas</small><b>${abertas.length}</b><i>${abertas.filter(acAtrasada).length} atrasada(s)</i></button>
+      <div class="kpi ok"><small>Ações concluídas</small><b>${concl.length}</b><i>correção aprovada</i></div>
+    </section>
+    ${u ? `<div class="grid2">
+      <section class="card"><div class="card-h"><h2>Notas dos eixos</h2><span class="note">última auditoria</span></div>
+        <div class="bars">${EIXOS.map(([k, t]) => { const n = notaN(u, k); return `<div class="bar"><span>${t}</span><div class="tr"><i class="${typeof n === 'number' && n < 3 ? 'low' : ''}" style="width:${typeof n === 'number' ? n / 5 * 100 : 0}%"></i><span class="ref" style="left:60%"></span></div><b>${n === 'na' ? 'N/A' : n == null ? '—' : n}</b></div>`; }).join('')}</div></section>
+      <section class="card"><div class="card-h"><h2>Histórico de notas</h2><span class="note">índice de cada auditoria</span></div>${pts.length ? lineSvg(pts, 'Histórico do índice de ' + e.nome) : '<div class="empty">Sem notas.</div>'}</section>
+    </div>` : `<div class="empty">${ic('visitas')}<b>Este parque ainda não foi auditado</b>Inicie uma auditoria em Auditorias.</div>`}
+    ${cmp ? `<section class="card"><div class="card-h"><h2>Comparativo com a auditoria anterior</h2><span class="note">${fd(ant.enviadoEm)} → ${fd(u.enviadoEm)}</span></div>
+      <div class="grid2"><div class="dt-wrap" style="box-shadow:none"><table><thead><tr><th>Eixo</th><th class="r">Anterior</th><th class="r">Atual</th><th class="r">Variação</th></tr></thead><tbody>
+        ${cmp.eixos.map(x => { const d = typeof x.at === 'number' && typeof x.ant === 'number' ? x.at - x.ant : null; return `<tr><td>${x.t}</td><td class="r">${x.ant ?? '—'}</td><td class="r"><b>${x.at ?? '—'}</b></td><td class="r" style="color:${d > 0 ? 'var(--ok)' : d < 0 ? 'var(--bad)' : 'inherit'};font-weight:700">${d == null ? '—' : d > 0 ? '▲ ' + d : d < 0 ? '▼ ' + Math.abs(d) : '='}</td></tr>`; }).join('')}
+        <tr><td><b>Índice</b></td><td class="r">${nf1(cmp.idxAnt)}</td><td class="r"><b>${nf1(cmp.idxAt)}</b></td><td class="r" style="font-weight:700;color:${dIdx > 0 ? 'var(--ok)' : dIdx < 0 ? 'var(--bad)' : 'inherit'}">${dIdx == null ? '—' : dIdx > 0 ? '▲ ' + nf1(dIdx) : dIdx < 0 ? '▼ ' + nf1(Math.abs(dIdx)) : '='}</td></tr></tbody></table></div>
+      <div class="stack tight">
+        <div><div class="grp-t" style="margin-top:0">Problemas resolvidos · ${cmp.resolvidos.length}</div>${cmp.resolvidos.map(k => pill((ITEM_INDEX[k] || {}).t || k, 'ok')).join(' ') || '<span class="note">Nenhum.</span>'}</div>
+        <div><div class="grp-t">Reincidentes · ${cmp.reincidentes.length}</div>${cmp.reincidentes.map(k => pill((ITEM_INDEX[k] || {}).t || k, 'bad')).join(' ') || '<span class="note">Nenhum.</span>'}</div>
+        <div><div class="grp-t">Novos problemas · ${cmp.novos.length}</div>${cmp.novos.map(k => pill((ITEM_INDEX[k] || {}).t || k, 'warn')).join(' ') || '<span class="note">Nenhum.</span>'}</div>
+        <div><div class="grp-t">Ocorrências na auditoria atual · ${cmp.ocNovas}</div></div>
+      </div></div></section>` : ''}
+    <div class="grid2">
+      <section class="card"><div class="card-h"><h2>Auditorias</h2><span class="note">${auds.length}</span></div>
+        ${auds.slice().reverse().map(v => `<div class="rep-it"><span><button class="link" type="button" data-act="ver-visita" data-id="${esc(v._id)}">${esc(v.codigo)}</button> · ${fd(v.enviadoEm)} · ${esc(quem(v))}</span><span class="row" style="gap:6px"><b class="num">${nf1(indice(v))}</b>${pill(ST[statusOf(v)][0], ST[statusOf(v)][1])}</span></div>`).join('') || '<p class="note">Nenhuma auditoria enviada.</p>'}</section>
+      <section class="card"><div class="card-h"><h2>Ações corretivas</h2><span class="note">${abertas.length} abertas · ${concl.length} concluídas</span></div>
+        ${acs.slice(0, 12).map(a => `<div class="rep-it"><span><button class="link" type="button" data-act="ac-abrir" data-id="${esc(a.id)}">${acCod(a)}</button> · ${esc(a.problema)}</span><span class="row" style="gap:6px">${acPill(a)}</span></div>`).join('') || '<p class="note">Nenhuma ação corretiva.</p>'}
+        ${acs.length > 12 ? `<button class="btn sm" type="button" data-act="parque-acoes" data-id="${esc(id)}">Ver todas na Central</button>` : ''}</section>
+    </div>
+    ${recL.length ? `<section class="card"><div class="card-h"><h2>Problemas recorrentes</h2><span class="note">itens reprovados em 2 ou mais auditorias</span></div>${recL.map(([k, n]) => `<div class="rep-it"><span>${esc(ITEM_INDEX[k].t)}</span>${pill(n + ' auditorias', 'bad')}</div>`).join('')}</section>` : ''}
+    <section class="card"><div class="card-h"><h2>Linha do tempo</h2><span class="note">auditorias, validações, ações e correções</span></div><div class="tl" id="tl-parque"><span class="skel" style="width:60%"></span><span class="skel" style="width:40%"></span></div></section>
+    ${fotos.length ? `<section class="card"><div class="card-h"><h2>Fotos e evidências</h2><span class="note">${fotos.length} foto(s), das mais recentes</span></div><div class="photos">${fotos.slice(0, 30).map(f => `<div class="ph" title="${esc(f.origem)} · ${f.data ? fd(f.data) : ''}"><img alt="${esc(f.origem)}" decoding="async" data-act="ver" data-fid="${esc(f.id)}"></div>`).join('')}</div></section>` : ''}
+  </div>`;
+  timelineParque(id, auds, acs);
+}
+async function timelineParque(id, auds, acs){
+  const ev = [];
+  auds.forEach(v => { ev.push({em: v.enviadoEm, ic: 'visitas', t: `Auditoria <b>${esc(v.codigo)}</b> enviada por ${esc(quem(v))} · índice ${nf1(indice(v))}`});
+    const w = S.val.get(v._id) || {}; (w.hist || []).forEach(h => ev.push({em: h.em, ic: 'validacao', t: `${esc(v.codigo)}: ${esc(ST[h.s] ? ST[h.s][0] : h.s === 'justificativa' ? 'justificativa registrada' : h.s)}${h.obs ? ' — ' + esc(h.obs) : ''}`}));
+    (v.ocorrencias || []).forEach(o => { if(o.crit === 'critica') ev.push({em: v.enviadoEm + 1, ic: 'alerta', t: `Ocorrência crítica: ${esc(o.desc || '')}`, cls: 'bad'}); }); });
+  let hs = []; if(acs.length){ try{ hs = await PEX.acoes.historicoVarios(acs.map(a => a.id)); }catch(e){} }
+  const porId = new Map(acs.map(a => [a.id, a]));
+  if(hs.length) hs.forEach(h => { const a = porId.get(h.acao_id); if(!a) return; const cod = acCod(a);
+    if(h.tipo === 'criada') ev.push({em: new Date(h.em).getTime(), ic: 'flag', t: `Ação <b>${cod}</b> criada: ${esc(a.problema)}`});
+    else if(h.tipo === 'status') ev.push({em: new Date(h.em).getTime(), ic: h.para === 'concluida' ? 'check' : h.para === 'reaberta' ? 'x' : 'pend', cls: h.para === 'concluida' ? 'ok' : h.para === 'reaberta' ? 'bad' : '',
+      t: `${cod}: ${h.para === 'concluida' ? 'correção aprovada' : h.para === 'reaberta' ? (h.de === 'aguardando_validacao' ? 'correção rejeitada' : 'ação reaberta') : h.para === 'aguardando_validacao' ? 'correção informada' : 'em andamento'}${h.texto ? ' — “' + esc(h.texto) + '”' : ''}`}); });
+  else acs.forEach(a => ev.push({em: new Date(a.criado_em).getTime(), ic: 'flag', t: `Ação <b>${acCod(a)}</b> criada: ${esc(a.problema)}`}));
+  const el = $('#tl-parque'); if(!el || S.parque !== id) return;
+  el.innerHTML = ev.sort((a, b) => b.em - a.em).slice(0, 60).map(x => `<div class="tl-i ${x.cls || ''}"><span class="tl-d">${ic(x.ic, 'sm')}</span><div><div>${x.t}</div><span class="note" style="margin:0">${fdt(x.em)}</span></div></div>`).join('') || '<p class="note">Sem eventos.</p>';
+}
+
+/* ---------- Relatórios (PDF pelo navegador: imprimir › salvar como PDF) ---------- */
+const PDF_CSS = `@page{size:A4;margin:14mm 12mm}*{box-sizing:border-box}body{font:11.5px/1.45 "Plus Jakarta Sans",Arial,sans-serif;color:#14201C;margin:0}
+h1{font-size:22px;margin:0 0 2px}h2{font-size:14px;margin:18px 0 6px;padding-bottom:4px;border-bottom:2px solid #0A6B5E;color:#07574C}h3{font-size:12px;margin:10px 0 4px}
+.cab{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #0A6B5E;padding-bottom:10px;margin-bottom:12px}.marca{display:flex;gap:10px;align-items:center}.mk{width:34px;height:34px;border-radius:8px;background:#0A6B5E;color:#fff;font-weight:800;display:grid;place-items:center;font-size:11px}
+.meta{color:#687773;font-size:11px}table{width:100%;border-collapse:collapse;margin:4px 0}th{background:#F1F4F3;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#3A4844}th,td{padding:5px 7px;border-bottom:1px solid #E3E8E6;vertical-align:top}td.r,th.r{text-align:right}
+.kp{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:8px 0}.kp div{border:1px solid #E3E8E6;border-radius:6px;padding:8px}.kp b{display:block;font-size:20px}.kp small{color:#687773}
+.tag{display:inline-block;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700;background:#ECF0EE}.ok{background:#E5F4EA;color:#1A7F45}.bad{background:#FBE8E6;color:#C0342A}.warn{background:#FDEEDF;color:#C05A0B}.info{background:#E6EEF8;color:#2660A4}
+.fotos{display:flex;flex-wrap:wrap;gap:6px}.fotos figure{margin:0;width:118px}.fotos img{width:118px;height:88px;object-fit:cover;border-radius:4px;border:1px solid #E3E8E6}.fotos figcaption{font-size:8.5px;color:#687773}
+.rod{margin-top:18px;color:#93A09C;font-size:9.5px;border-top:1px solid #E3E8E6;padding-top:6px}tr,figure{break-inside:avoid}.aviso{background:#FDEEDF;padding:8px;border-radius:6px;margin-bottom:10px}@media screen{body{max-width:820px;margin:20px auto;padding:0 16px}}`;
+function tagSt(t, c){ return `<span class="tag ${c || ''}">${esc(t)}</span>`; }
+function abrirImpressao(titulo){
+  const w = window.open('', '_blank'); if(!w){ toast('O navegador bloqueou a janela do relatório. Permita pop-ups para este site.', 'bad'); return null; }
+  w.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${esc(titulo)}</title><style>${PDF_CSS}</style></head><body><p class="meta">Preparando o relatório…</p></body></html>`); w.document.close();
+  return w;
+}
+async function finalizarImpressao(w, html){
+  w.document.body.innerHTML = html;
+  const imgs = [...w.document.querySelectorAll('img[data-fid]')];
+  await Promise.all(imgs.map(async im => { const u = await PEX.urlDe(im.dataset.fid); if(u){ im.src = u; await new Promise(r => { im.onload = im.onerror = r; setTimeout(r, 8000); }); } else im.closest('figure') && im.closest('figure').remove(); }));
+  setTimeout(() => { w.focus(); w.print(); }, 300);
+}
+function cabecalhoPdf(titulo, sub){
+  return `<div class="cab"><div class="marca"><div class="mk">PEX</div><div><b>Plataforma PEX</b><div class="meta">Evento Kids · Programa de Excelência e Auditoria</div></div></div><div style="text-align:right"><h1>${esc(titulo)}</h1><div class="meta">${sub}</div></div></div>`;
+}
+async function pdfAuditoria(vid){
+  const v = S.visitas.get(vid); if(!v) return; const w = abrirImpressao('Auditoria ' + v.codigo); if(!w) return;
+  const st = statusOf(v); const sit = situacao(v); const idx = indice(v); const val = S.val.get(vid) || {};
+  const acs = [...S.acoes.values()].filter(a => a.visita === vid);
+  const secs = STEPS.filter(s => s.grupos);
+  const fotos = fotosDaVisita(v).slice(0, 24);
+  const html = `${cabecalhoPdf('Relatório de auditoria', `${esc(v.codigo)} · gerado em ${fdt(Date.now())}`)}
+    <table><tr><th>Parque</th><td><b>${esc(evName(v.evento))}</b></td><th>Data</th><td>${fdt(v.enviadoEm || v.criadoEm)}</td></tr>
+      <tr><th>Auditor</th><td>${esc(quem(v).replace(' (você)', ''))}</td><th>Status</th><td>${tagSt(ST[st][0])} ${tagSt(sit, sitCls(sit))}</td></tr>
+      <tr><th>Líder presente</th><td>${esc(v.lider || '—')}</td><th>Atendimento</th><td>${esc((v.atendentes || []).filter(Boolean).join(', ') || '—')}</td></tr></table>
+    <div class="kp" style="grid-template-columns:repeat(5,1fr)"><div><small>Índice PEX</small><b>${nf1(idx)}</b>${idx == null ? '' : ESCALA[Math.round(idx)]}</div>${EIXOS.map(([k, t]) => { const n = notaN(v, k); return `<div><small>${t}</small><b>${n === 'na' ? 'N/A' : n ?? '—'}</b>${typeof n === 'number' ? ESCALA[n] : ''}</div>`; }).join('')}</div>
+    <h2>Justificativas das notas</h2><table>${EIXOS.map(([k, t]) => `<tr><th style="width:110px">${t}</th><td>${esc((v.notas[k] || {}).j || '—')}</td></tr>`).join('')}</table>
+    <h2>Não conformidades</h2>${(() => { const l = ncDaVisita(v); return l.length ? `<table><tr><th>Item</th><th>Etapa</th><th>Observação</th><th>Acompanhamento</th></tr>${l.map(n => { const c = coberturaNc(v, n); return `<tr><td>${esc(n.titulo)}</td><td>${esc(n.etapa)}</td><td>${esc(n.obs || '')}</td><td>${c && c.acao ? acCod(c.acao) + ' · ' + esc(AC_ST[c.acao.status][0]) : c && c.just ? 'Justificada: ' + esc(c.just.texto) : tagSt('Pendente', 'bad')}</td></tr>`; }).join('')}</table>` : '<p>Nenhuma não conformidade.</p>'; })()}
+    <h2>Ocorrências</h2>${(v.ocorrencias || []).length ? `<table><tr><th>Criticidade</th><th>Categoria</th><th>Local</th><th>Descrição</th><th>Colaboradora</th></tr>${v.ocorrencias.map(o => `<tr><td>${tagSt(CRIT[o.crit][0], CRIT[o.crit][1])}</td><td>${esc(CATEG[o.eixo] || '')}</td><td>${esc(o.local || '')}</td><td>${esc(o.desc || '')}</td><td>${esc(o.colab || '')}</td></tr>`).join('')}</table>` : '<p>Nenhuma ocorrência registrada.</p>'}
+    <h2>Ações corretivas</h2>${acs.length ? `<table><tr><th>Ação</th><th>Problema</th><th>Departamento</th><th>Responsável</th><th>Prazo</th><th>Situação</th></tr>${acs.map(a => `<tr><td>${acCod(a)}</td><td>${esc(a.problema)}</td><td>${esc(DEPS[a.departamento] || '—')}</td><td>${esc(a.responsavel || '—')}</td><td>${a.prazo ? fiso(a.prazo) : '—'}</td><td>${tagSt(AC_ST[a.status][0], AC_ST[a.status][1])}${acAtrasada(a) ? ' ' + tagSt('Atrasada', 'bad') : ''}</td></tr>`).join('')}</table>` : '<p>Nenhuma ação corretiva vinculada.</p>'}
+    <h2>Resultado do checklist</h2>${secs.map(s => { const its = s.grupos.filter(g => !g.inflaveis || v.temInflaveis).flatMap(g => g.itens); return `<h3>${s.t}</h3><table>${its.map(i => { const a = v.itens[i.id] || {}; return `<tr><td>${esc(i.t)}</td><td style="width:110px">${a.r === 'c' ? tagSt('Conforme', 'ok') : a.r === 'nc' ? tagSt('Não conforme', 'bad') : a.r === 'na' ? tagSt('N/A') : tagSt('Sem resposta', 'warn')}</td><td>${esc(a.obs || '')}</td></tr>`; }).join('')}</table>`; }).join('')}
+    <h2>Estoque declarado</h2>${(v.estoque || []).filter(r => r.sku && (r.exposto !== '' || r.reserva !== '')).length ? `<table><tr><th>Produto</th><th class="r">Exposto</th><th class="r">Reserva</th><th class="r">Total</th>${S.me.admin ? '<th class="r">Teórico</th><th class="r">Divergência</th>' : ''}</tr>${(v.estoque || []).map((r, i) => ({r, i})).filter(({r}) => r.sku && (r.exposto !== '' || r.reserva !== '')).map(({r, i}) => { const t = (+r.exposto || 0) + (+r.reserva || 0); const teo = teoricoDe(v, val, i); const dv = teo === '' || teo == null ? null : t - (+teo || 0); return `<tr><td>${esc(r.sku)}</td><td class="r">${+r.exposto || 0}</td><td class="r">${+r.reserva || 0}</td><td class="r"><b>${t}</b></td>${S.me.admin ? `<td class="r">${teo === '' || teo == null ? '—' : esc(teo)}</td><td class="r">${dv == null ? '—' : (dv > 0 ? '+' : '') + dv}</td>` : ''}</tr>`; }).join('')}</table>` : '<p>Sem contagem.</p>'}
+    ${fotos.length ? `<h2>Fotografias</h2><div class="fotos">${fotos.map(f => `<figure><img data-fid="${esc(f.id)}" alt=""><figcaption>${esc(f.origem)}</figcaption></figure>`).join('')}</div>` : ''}
+    <div class="rod">Relatório gerado pela Plataforma PEX em ${fdt(Date.now())} por ${esc((S.perfil || {}).nome || '')}. Os dados refletem o sistema no momento da geração.</div>`;
+  finalizarImpressao(w, html);
+}
+function pdfGerencial(de, ate){
+  const w = abrirImpressao('Relatório gerencial PEX'); if(!w) return;
+  const salvo = S.df; S.df = {de, ate}; const D = dashDados(); S.df = salvo;
+  const com = D.linhas.filter(r => r.u && r.u.enviadoEm); const idxs = com.map(r => r.idx).filter(x => x != null);
+  const media = idxs.length ? idxs.reduce((a, b) => a + b, 0) / idxs.length : null;
+  const ordem = com.filter(r => r.idx != null).sort((a, b) => b.idx - a.idx);
+  const acs = D.acoes; const deIn = de ? new Date(de + 'T00:00:00').getTime() : 0; const ateIn = ate ? new Date(ate + 'T23:59:59').getTime() : Infinity;
+  const noPer = a => { const t = new Date(a.criado_em).getTime(); return t >= deIn && t <= ateIn; };
+  const crit = []; D.auds.forEach(v => (v.ocorrencias || []).forEach(o => { if(o.crit === 'critica') crit.push({v, o, a: acaoDaOc(v._id, o.id)}); }));
+  const itens = new Map(); D.auds.forEach(v => ncSet(v).forEach(k => itens.set(k, (itens.get(k) || 0) + 1)));
+  const top = [...itens.entries()].filter(([k]) => ITEM_INDEX[k]).sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const dep = [...Object.entries(DEPS), ['', 'Sem departamento']].map(([k, t]) => { const l = acs.filter(a => (a.departamento || '') === k); const c = l.filter(a => a.status === 'concluida'); const tm = c.filter(a => a.concluido_em).map(a => (new Date(a.concluido_em) - new Date(a.criado_em)) / DIA); return {t, n: l.length, c: c.length, at: l.filter(acAtrasada).length, ab: l.filter(acAbertaSt).length, tm: tm.length ? Math.round(tm.reduce((a, b) => a + b, 0) / tm.length) : null}; }).filter(r => r.n);
+  const per = (de ? fiso(de) : 'início') + ' a ' + (ate ? fiso(ate) : 'hoje');
+  const html = `${cabecalhoPdf('Relatório gerencial', `Período: ${per} · gerado em ${fdt(Date.now())}`)}
+    <div class="kp"><div><small>Parques auditados</small><b>${com.length}</b>de ${D.evs.length}</div><div><small>Auditorias no período</small><b>${D.auds.length}</b></div><div><small>Índice PEX médio</small><b>${nf1(media == null ? null : Math.round(media * 10) / 10)}</b>${media == null ? '' : ESCALA[Math.round(media)]}</div><div><small>Ocorrências críticas</small><b>${crit.length}</b>${crit.filter(x => !x.a || x.a.status !== 'concluida').length} em aberto</div></div>
+    <div class="kp"><div><small>Ações abertas</small><b>${acs.filter(acAbertaSt).length}</b></div><div><small>Ações concluídas</small><b>${acs.filter(a => a.status === 'concluida').length}</b></div><div><small>Ações atrasadas</small><b>${acs.filter(acAtrasada).length}</b></div><div><small>Ações criadas no período</small><b>${acs.filter(noPer).length}</b></div></div>
+    <h2>Melhores desempenhos</h2><table><tr><th>Parque</th><th class="r">Índice</th><th>Última auditoria</th><th>Situação</th></tr>${ordem.slice(0, 5).map(r => `<tr><td>${esc(r.e.nome)}</td><td class="r"><b>${nf1(r.idx)}</b></td><td>${fd(r.u.enviadoEm)}</td><td>${tagSt(r.sit, sitCls(r.sit))}</td></tr>`).join('') || '<tr><td colspan="4">Sem auditorias.</td></tr>'}</table>
+    <h2>Piores desempenhos</h2><table><tr><th>Parque</th><th class="r">Índice</th><th>Última auditoria</th><th>Situação</th><th class="r">Ações abertas</th></tr>${ordem.slice().reverse().slice(0, 5).map(r => `<tr><td>${esc(r.e.nome)}</td><td class="r"><b>${nf1(r.idx)}</b></td><td>${fd(r.u.enviadoEm)}</td><td>${tagSt(r.sit, sitCls(r.sit))}</td><td class="r">${r.pend}</td></tr>`).join('') || '<tr><td colspan="5">Sem auditorias.</td></tr>'}</table>
+    <h2>Índice por parque</h2><table><tr><th>Parque</th><th>Sócio</th>${EIXOS.map(([k, t]) => `<th class="r">${t}</th>`).join('')}<th class="r">Índice</th></tr>${ordem.map(r => `<tr><td>${esc(r.e.nome)}</td><td>${esc(r.e.franquia || '')}</td>${EIXOS.map(([k]) => `<td class="r">${notaN(r.u, k) ?? '—'}</td>`).join('')}<td class="r"><b>${nf1(r.idx)}</b></td></tr>`).join('')}</table>
+    <h2>Problemas mais recorrentes</h2><table><tr><th>Item</th><th class="r">Vezes reprovado</th></tr>${top.map(([k, n]) => `<tr><td>${esc(ITEM_INDEX[k].t)}</td><td class="r">${n}</td></tr>`).join('') || '<tr><td colspan="2">Nenhuma não conformidade no período.</td></tr>'}</table>
+    <h2>Ocorrências críticas</h2><table><tr><th>Parque</th><th>Data</th><th>Descrição</th><th>Ação</th></tr>${crit.map(x => `<tr><td>${esc(evName(x.v.evento))}</td><td>${fd(x.v.enviadoEm)}</td><td>${esc(x.o.desc || '')}</td><td>${x.a ? acCod(x.a) + ' · ' + esc(AC_ST[x.a.status][0]) : tagSt('Sem ação', 'bad')}</td></tr>`).join('') || '<tr><td colspan="4">Nenhuma.</td></tr>'}</table>
+    <h2>Indicadores por departamento</h2><table><tr><th>Departamento</th><th class="r">Atribuídas</th><th class="r">Abertas</th><th class="r">Concluídas</th><th class="r">Atrasadas</th><th class="r">Conclusão</th><th class="r">Tempo médio</th></tr>${dep.map(r => `<tr><td>${esc(r.t)}</td><td class="r">${r.n}</td><td class="r">${r.ab}</td><td class="r">${r.c}</td><td class="r">${r.at}</td><td class="r">${Math.round(r.c / r.n * 100)}%</td><td class="r">${r.tm == null ? '—' : r.tm + ' dia(s)'}</td></tr>`).join('') || '<tr><td colspan="7">Nenhuma ação.</td></tr>'}</table>
+    <h2>Ações em aberto</h2><table><tr><th>Ação</th><th>Parque</th><th>Problema</th><th>Responsável</th><th>Prazo</th><th>Status</th></tr>${acs.filter(acAbertaSt).sort((a, b) => String(a.prazo || '9').localeCompare(String(b.prazo || '9'))).map(a => `<tr><td>${acCod(a)}</td><td>${esc(evName(a.evento))}</td><td>${esc(a.problema)}</td><td>${esc(a.responsavel || '—')}</td><td>${a.prazo ? fiso(a.prazo) : '—'}</td><td>${tagSt(AC_ST[a.status][0], AC_ST[a.status][1])}${acAtrasada(a) ? ' ' + tagSt('Atrasada', 'bad') : ''}</td></tr>`).join('') || '<tr><td colspan="6">Nenhuma.</td></tr>'}</table>
+    <div class="rod">Relatório gerado pela Plataforma PEX em ${fdt(Date.now())} por ${esc((S.perfil || {}).nome || '')}. Índices consideram a auditoria mais recente de cada parque dentro do período.</div>`;
+  finalizarImpressao(w, html);
+}
+function renderRelatorios(){
+  if(!S.me.admin){ go('painel'); return; }
+  const auds = submetidas().sort((a, b) => b.enviadoEm - a.enviadoEm);
+  const ini = new Date(); ini.setDate(1);
+  $('#main').innerHTML = `<div class="stack">
+    ${pageHead('Relatórios', 'Gere relatórios em PDF com os dados atuais do sistema. Na janela que abrir, escolha "Salvar como PDF".')}
+    <div class="grid2">
+      <section class="card stack tight"><h2>Relatório gerencial</h2><p class="note" style="margin:0">Parques auditados, índices médios, melhores e piores, problemas recorrentes, ocorrências críticas, ações e indicadores por departamento.</p>
+        <div class="fgrid"><label class="f">De<input type="date" id="rg-de" value="${ini.toISOString().slice(0, 10)}"></label><label class="f">Até<input type="date" id="rg-ate" value="${hojeISO()}"></label></div>
+        <button class="btn pri" type="button" data-act="rg-gerar">${ic('envio')}Gerar relatório gerencial</button></section>
+      <section class="card stack tight"><h2>Relatório de auditoria</h2><p class="note" style="margin:0">Identificação, índice, notas, checklist, não conformidades, ocorrências, ações corretivas, estoque e fotografias de uma auditoria.</p>
+        <label class="f">Auditoria<select id="ra-v">${auds.map(v => `<option value="${esc(v._id)}">${esc(v.codigo)} · ${esc(evName(v.evento))} · ${fd(v.enviadoEm)}</option>`).join('') || '<option value="">Nenhuma auditoria enviada</option>'}</select></label>
+        <button class="btn pri" type="button" data-act="ra-gerar"${auds.length ? '' : ' disabled'}>${ic('envio')}Gerar relatório da auditoria</button></section>
+    </div>
+  </div>`;
+}
+/* ---------- Menu "Mais" no celular ---------- */
+function maisSheet(){
+  const it = (v, ic2, t, sub) => `<button type="button" class="uitem" data-act="mais-ir" data-v="${v}"><span class="avatar" style="background:var(--brand-50);color:var(--brand-700);border-color:transparent">${ic(ic2)}</span><span class="u"><b>${t}</b><span>${sub}</span></span>${ic('right')}</button>`;
+  abrirSheet(`<div class="sheet-in"><div class="t" style="font-size:18px;font-weight:780">Mais opções</div><div class="ulist" style="grid-template-columns:1fr">
+    ${it('parques', 'parque', 'Parques', 'Histórico individual de cada parque')}
+    ${it('relatorios', 'envio', 'Relatórios', 'PDF de auditoria e relatório gerencial')}
+    ${it('notificacoes', 'sino', 'Notificações', 'Avisos de auditorias e ações')}
+    ${it('usuarios', 'cfg', 'Configurações', 'Usuários e cadastro de parques')}
+  </div><button class="btn ghost block" type="button" data-act="sheet-close">Fechar</button></div>`);
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-act]'); if(!b) return; const a = b.dataset.act;
+  if(a === 'parque-abrir'){ if(ev.target.closest('input,select')) return; S.parque = b.dataset.id; if(S.tab !== 'parques'){ S.manterParque = true; go('parques'); } else { renderParques(); window.scrollTo(0, 0); } }
+  else if(a === 'parque-voltar'){ S.parque = null; renderParques(); window.scrollTo(0, 0); }
+  else if(a === 'parque-acoes'){ S.pf = {parque: b.dataset.id}; S.ppage = 1; go('pendencias'); }
+  else if(a === 'pdf-aud'){ pdfAuditoria(b.dataset.id); }
+  else if(a === 'rel-gerencial'){ go('relatorios'); }
+  else if(a === 'rg-gerar'){ pdfGerencial($('#rg-de').value, $('#rg-ate').value); }
+  else if(a === 'ra-gerar'){ const v = $('#ra-v').value; if(v) pdfAuditoria(v); }
+  else if(a === 'mais'){ maisSheet(); }
+  else if(a === 'mais-ir'){ fecharSheet(); go(b.dataset.v); }
+});
+document.addEventListener('keydown', e => { const r = e.target.closest && e.target.closest('tr.click[data-act="parque-abrir"]'); if(r && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); r.click(); } });
+document.addEventListener('input', e => { const t = e.target; if(t.dataset && t.dataset.plq !== undefined){ S.plq = t.value; const pos = t.selectionStart; renderParques(); const n = $('#plq'); if(n){ n.focus(); n.setSelectionRange(pos, pos); } } });
+document.addEventListener('change', e => { const t = e.target; if(t.dataset && t.dataset.plsoc !== undefined){ S.plsoc = t.value; renderParques(); } });
 
 init();
 </script>

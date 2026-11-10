@@ -525,3 +525,11 @@ svg.ln{width:100%;height:auto;display:block;margin-bottom:6px}
 .ln .pt:hover .dot{r:6}
 details.filtros>summary{padding:13px 18px}
 @media (min-width:768px){ details.filtros>summary{display:none} details.filtros .fold-b{padding:18px} details.filtros-int>summary{display:none} details.filtros-int .ac-filtros{margin-top:0 !important} }
+
+/* ---------- 22. Linha do tempo ---------- */
+.tl{display:grid;gap:0}
+.tl-i{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:8px 0;position:relative;font-size:13.5px}
+.tl-i::before{content:"";position:absolute;left:13px;top:34px;bottom:-8px;width:2px;background:var(--line)}
+.tl-i:last-child::before{display:none}
+.tl-d{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--surface-3);color:var(--ink-2);position:relative;z-index:1}
+.tl-i.ok .tl-d{background:var(--ok-bg);color:var(--ok)} .tl-i.bad .tl-d{background:var(--bad-bg);color:var(--bad)}
