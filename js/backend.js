@@ -25,7 +25,7 @@
   }
 
   // Mantém a mensagem escrita no banco (ex.: "Só o master gerencia administradores").
-  function erroMsg(e){ const x = erro(e); if(e && e.message && /[À-ú]|master|Sem permissão/.test(e.message)) x.message = e.message; return x; }
+  function erroMsg(e){ const x = erro(e); if(e && e.message && (/[À-ú]|master|Sem permissão/.test(e.message) || ['22023','P0002'].includes(e.code))) x.message = e.message; return x; }
 
   function rid(n){ const a = new Uint8Array(n || 15); crypto.getRandomValues(a); return [...a].map(b => 'abcdefghijklmnopqrstuvwxyz0123456789'[b % 36]).join(''); }
 
@@ -193,6 +193,24 @@
     async excluirUsuario(id){ const {error} = await sb.rpc('pex_excluir_usuario', {alvo: id}); if(error) throw erroMsg(error); },
     async definirSenha(id, senha){ const {error} = await sb.rpc('pex_definir_senha', {alvo: id, senha}); if(error) throw erroMsg(error); },
     async confirmarEmail(id){ const {error} = await sb.rpc('pex_confirmar_email', {alvo: id}); if(error) throw erroMsg(error); },
+    /* Central de Pendências: ações corretivas (tabela pex_acoes, só administração) */
+    acoes: {
+      async listar(){
+        const out = []; let from = 0; const page = 1000;
+        for(;;){
+          const {data, error} = await sb.from('pex_acoes').select('*').order('numero').range(from, from + page - 1);
+          if(error) throw erroMsg(error);
+          out.push(...data); if(data.length < page) break; from += page;
+        }
+        return out;
+      },
+      async criar(obj){ const {data, error} = await sb.from('pex_acoes').insert(obj).select('*'); if(error) throw erroMsg(error); return data[0]; },
+      async atualizar(id, patch){ const {data, error} = await sb.from('pex_acoes').update(patch).eq('id', id).select('*'); if(error) throw erroMsg(error); if(!data || !data.length) throw erro({code: '42501'}); return data[0]; },
+      async transicao(id, para, texto, fotos){ const {data, error} = await sb.rpc('pex_acao_transicao', {p_id: id, p_para: para, p_texto: texto || '', p_fotos: fotos || []}); if(error) throw erroMsg(error); return Array.isArray(data) ? data[0] : data; },
+      async evidencia(id, texto, fotos){ const {data, error} = await sb.rpc('pex_acao_evidencia', {p_id: id, p_texto: texto || '', p_fotos: fotos || []}); if(error) throw erroMsg(error); return Array.isArray(data) ? data[0] : data; },
+      async historico(id){ const {data, error} = await sb.from('pex_acoes_hist').select('*').eq('acao_id', id).order('id'); if(error) throw erroMsg(error); return data || []; },
+      assinar(cb){ return sb.channel('pex-acoes').on('postgres_changes', {event: '*', schema: 'public', table: 'pex_acoes'}, p => cb(p)).subscribe(); }
+    },
     async mudarPerfil(id, patch){ const {data, error} = await sb.from('pex_perfis').update(patch).eq('id', id).select('id'); if(error) throw erroMsg(error); if(!data.length) throw erro({code: '42501'}); }
   };
 })();

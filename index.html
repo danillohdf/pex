@@ -31,6 +31,7 @@
     <button class="tab" type="button" data-act="tab" data-v="painel" data-tip="Dashboard" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-painel"/></svg><span class="lbl">Dashboard</span></button>
     <button class="tab" type="button" data-act="tab" data-v="visitas" data-tip="Auditorias" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-visitas"/></svg><span class="lbl">Auditorias</span></button>
     <button class="tab" type="button" data-act="tab" data-v="validacao" data-tip="Validação" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-validacao"/></svg><span class="lbl">Validação</span><span class="ct ct-val" hidden>0</span></button>
+    <button class="tab" type="button" data-act="tab" data-v="pendencias" data-tip="Central de Pendências" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-pend"/></svg><span class="lbl">Central de Pendências</span><span class="ct ct-pend" hidden>0</span></button>
   </nav>
   <div class="side-bottom">
     <button class="tab" type="button" data-act="tab" data-v="usuarios" data-tip="Configurações" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-cfg"/></svg><span class="lbl">Configurações</span><span class="ct soft ct-usr" hidden>0</span></button>
@@ -54,6 +55,7 @@
   <button class="tab" type="button" data-act="tab" data-v="painel" aria-selected="true"><svg class="ic" aria-hidden="true"><use href="#i-painel"/></svg>Dashboard</button>
   <button class="tab" type="button" data-act="tab" data-v="visitas" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-visitas"/></svg>Auditorias</button>
   <button class="tab" type="button" data-act="tab" data-v="validacao" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-validacao"/></svg>Validação<span class="ct ct-val" hidden>0</span></button>
+  <button class="tab" type="button" data-act="tab" data-v="pendencias" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-pend"/></svg>Pendências<span class="ct ct-pend" hidden>0</span></button>
   <button class="tab" type="button" data-act="tab" data-v="usuarios" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-cfg"/></svg>Ajustes<span class="ct soft ct-usr" hidden>0</span></button>
 </nav>
 
@@ -98,6 +100,7 @@
   <symbol id="i-side" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/><path d="m15 10-2 2 2 2"/></symbol>
   <symbol id="i-cfg" viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></symbol>
   <symbol id="i-parque" viewBox="0 0 24 24"><path d="M3 21h18M5 21V10l7-5 7 5v11"/><path d="M10 21v-6h4v6"/></symbol>
+  <symbol id="i-pend" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2"/><circle cx="5" cy="12" r="1.4"/><circle cx="5" cy="18" r="1.4"/></symbol>
   <symbol id="i-coroa" viewBox="0 0 24 24"><path d="M3 8l4.5 4L12 5l4.5 7L21 8l-2 11H5L3 8Z"/></symbol>
 </svg>
 
@@ -198,7 +201,7 @@ STEPS.forEach(s => (s.fotos||[]).forEach(([id,t]) => FOTO_INDEX[id] = t));
 
 /* ===================== Estado ===================== */
 const S = {db:null, assets:null, user:null, me:{id:null, admin:false, write:null},
-  eventos:new Map(), visitas:new Map(), val:new Map(), names:{}, loaded:{ev:false, vi:false, va:false},
+  eventos:new Map(), visitas:new Map(), val:new Map(), names:{}, loaded:{ev:false, vi:false, va:false, ac:false}, acoes:new Map(), pf:{}, psort:{col:'prazo', dir:1}, ppage:1,
   tab:'painel', edit:null, rep:null, saving:false, pending:false, fotoKey:null, filt:{q:'', fr:'all'}, vfilt:'minhas'};
 const $ = (s, r=document) => r.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -233,7 +236,7 @@ function statusOf(v){
   return w.status;
 }
 function acaoOf(vid, oc){ const w = S.val.get(vid); return (w && w.acoes && w.acoes[oc.id]) || {}; }
-function ocAberta(vid, oc){ return (acaoOf(vid, oc).status || 'aberta') !== 'resolvida'; }
+function ocAberta(vid, oc){ const a = S.acoes && S.acoes.size ? acaoDaOc(vid, oc.id) : null; if(a) return a.status !== 'concluida'; return (acaoOf(vid, oc).status || 'aberta') !== 'resolvida'; }
 function situacao(v){
   const crit = (v.ocorrencias||[]).some(o => o.crit === 'critica' && ocAberta(v._id, o));
   if(crit) return 'Bloqueado';
@@ -262,7 +265,11 @@ async function init(){
   document.querySelectorAll('.side-papel').forEach(el => el.textContent = (PAPEL[perfil.papel] || [''])[0]);
   S.me.master = perfil.papel === 'master';
   document.querySelectorAll('[data-admin]').forEach(el => el.hidden = !S.me.admin);
-  if(S.me.admin) contarPendentes();
+  if(S.me.admin){
+    contarPendentes(); carregarAcoes();
+    PEX.acoes.assinar(p => { if(p.new && p.new.id){ S.acoes.set(p.new.id, p.new); contarAcoes(); refresh(true); } });
+    document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') carregarAcoes(); });
+  }
   db.collection('eventos').onSnapshot(s => { S.eventos = new Map(s.docs.map(d => [d.id, d.data()])); S.loaded.ev = true; refresh(); }, e => toast('Erro ao carregar eventos: ' + e.code));
   db.collection('visitas').onSnapshot(s => { S.visitas = new Map(s.docs.map(d => [d.id, {...d.data(), _id:d.id}])); S.loaded.vi = true; resolveNames(); refresh(true); }, e => toast('Erro ao carregar visitas: ' + e.code));
   db.collection('validacoes').onSnapshot(s => { S.val = new Map(s.docs.map(d => [d.id, d.data()])); S.loaded.va = true; refresh(true); }, e => toast('Erro ao carregar validações: ' + e.code));
@@ -296,7 +303,7 @@ function updateCounts(){
 /* ===================== Rotas ===================== */
 function route(){
   if(S.edit && S.db){ clearTimeout(S.saveT); const e = S.edit; S.db.doc('visitas/' + e.id).set(clone(e.d)).catch(() => toast('A última alteração da visita não foi salva.')); }
-  const h = location.hash.slice(1); S.tab = ['painel','visitas'].concat(S.me.admin ? ['validacao','usuarios'] : []).includes(h) ? h : 'painel'; S.edit = null; S.rep = null; render(); }
+  const h = location.hash.slice(1); S.tab = ['painel','visitas'].concat(S.me.admin ? ['validacao','pendencias','usuarios'] : []).includes(h) ? h : 'painel'; S.edit = null; S.rep = null; render(); }
 window.addEventListener('hashchange', route);
 function go(tab){ if(location.hash.slice(1) === tab){ route(); } else location.hash = tab; }
 
@@ -311,6 +318,7 @@ function render(){
   if(S.tab === 'painel') renderPainel();
   else if(S.tab === 'visitas') renderVisitas();
   else if(S.tab === 'usuarios') renderUsuarios();
+  else if(S.tab === 'pendencias') renderPendencias();
   else renderValidacao();
 }
 
@@ -654,6 +662,11 @@ async function compress(file){
 }
 async function uploadFiles(files){
   const key = S.fotoKey; if(!key || !S.assets) return;
+  if(key === 'acform' || key === 'acev'){
+    const arr = key === 'acform' ? S.acForm.fotos : (S.acEvFotos = S.acEvFotos || []);
+    for(const f of files){ try{ const b = await compress(f); const res = await S.assets.upload(b, {type: b.type || 'image/jpeg'}); arr.push(res.id); }catch(err){ toast('Não foi possível enviar a foto. Tente de novo.', 'bad'); break; } }
+    acaoSheet(S.acAberta); return;
+  }
   const ctx = key.startsWith('acao:') ? S.rep && S.rep.w : S.edit && S.edit.d;
   if(!ctx) return;
   let n = 0;
@@ -703,18 +716,12 @@ function renderReport(){
         <div class="hist" style="margin-top:10px">${EIXOS.map(([k,t]) => v.notas[k] && v.notas[k].j ? `<span><b>${t}:</b> ${esc(v.notas[k].j)}</span>` : '').join('')}</div></div>
     </div>
     ${canAct ? validPanel(v, w, st) : (w.hist && w.hist.length ? `<section class="card"><h2>Validação</h2><div class="hist" style="margin-top:8px">${histHtml(w)}</div></section>` : '')}
-    <section class="card rep-sec"><div class="card-h"><h2>Ocorrências e plano de ação</h2><span class="note">${ocs.filter(o => ocAberta(v._id,o)).length} em aberto</span></div>
+    <section class="card rep-sec"><div class="card-h"><h2>Ocorrências e plano de ação</h2><span class="row" style="gap:8px"><span class="note" style="margin:0">${ocs.filter(o => ocAberta(v._id,o)).length} em aberto</span>${canAct && ocs.filter(o => !acaoDaOc(v._id, o.id)).length > 1 ? `<button class="btn sm" type="button" data-act="ac-todas" data-v="${esc(v._id)}">${ic('plus','sm')}Criar ações de todas</button>` : ''}</span></div>
       ${ocs.map((o,i) => { const a = (w.acoes||{})[o.id] || {}; const ast = a.status || 'aberta'; const venc = ast !== 'resolvida' && a.prazo && a.prazo < new Date().toISOString().slice(0,10); return `<div class="oc ${esc(o.crit)}">
-        <div class="row" style="justify-content:space-between"><span><span class="mono">${esc(v.codigo)}-O${i+1}</span> · ${pill(CRIT[o.crit][0], CRIT[o.crit][1])} ${reincidente(v,o) ? pill('Reincidente','warn') : ''}</span>${pill(ACAO[ast][0], ACAO[ast][1])}</div>
+        <div class="row" style="justify-content:space-between"><span><span class="mono">${esc(v.codigo)}-O${i+1}</span> · ${pill(CRIT[o.crit][0], CRIT[o.crit][1])} ${reincidente(v,o) ? pill('Reincidente','warn') : ''}</span>${admin ? (acaoDaOc(v._id, o.id) ? acPill(acaoDaOc(v._id, o.id)) : pill('Sem ação','warn')) : pill(ACAO[ast][0], ACAO[ast][1])}</div>
         <div><b>${esc(CATEG[o.eixo] || o.eixo)}${o.local ? ' · ' + esc(o.local) : ''}</b><br>${esc(o.desc||'')}${o.colab ? `<br><span class="muted">Colaboradora envolvida: <b>${esc(o.colab)}</b></span>` : ''}${o.acao ? `<br><span class="muted">Ação proposta: ${esc(o.acao)}</span>` : ''}${o.crit === 'critica' ? `<br><span class="note">${o.comunicado ? 'Comunicado na hora e área suspensa.' : 'Sem confirmação de comunicação imediata.'}</span>` : ''}</div>
         ${photos('', o.fotos||[], false)}
-        ${canAct ? `<div class="fgrid">
-          <label class="f">Responsável pela correção<input type="text" id="w-a-${o.id}-resp" data-w="acoes.${o.id}.resp" value="${esc(a.resp||'')}" list="dl-areas" placeholder="Nome completo de quem vai corrigir"></label>
-          <label class="f">Prazo<input type="date" id="w-a-${o.id}-prazo" data-w="acoes.${o.id}.prazo" value="${esc(a.prazo||'')}"${venc ? ' style="border-color:var(--bad)"' : ''}></label>
-          <label class="f">Status<select id="w-a-${o.id}-st" data-w="acoes.${o.id}.status" data-rerender>${Object.entries(ACAO).map(([k,[t]]) => `<option value="${k}"${ast === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
-        </div>
-        <label class="f">Evidência de correção<input type="text" id="w-a-${o.id}-obs" data-w="acoes.${o.id}.obs" value="${esc(a.obs||'')}" placeholder="O que foi feito"></label>
-        ${photos('acao:' + o.id, a.fotos||[], true)}` : (a.resp || a.prazo ? `<p class="note">Responsável: ${esc(a.resp||'—')} · prazo ${fiso(a.prazo)}${venc ? ' · <b style="color:var(--bad)">vencido</b>' : ''}${a.obs ? ' · ' + esc(a.obs) : ''}</p>${photos('', a.fotos||[], false)}` : '')}
+        ${canAct ? acaoBox(v, o) : (!admin && (a.resp || a.prazo) ? `<p class="note">Em tratamento pela administração.</p>` : '')}
       </div>`; }).join('') || '<p class="empty">Nenhuma ocorrência registrada.</p>'}
     </section>
     <section class="card rep-sec"><div class="card-h"><h2>Estoque</h2>${canAct ? '<span class="note">Informe o teórico (saldo do sistema) para ver a divergência</span>' : ''}</div>
@@ -735,7 +742,7 @@ function renderReport(){
 function histHtml(w){ return (w.hist||[]).slice().reverse().map(h => `<span>${fdt(h.em)} · ${esc(ST[h.s] ? ST[h.s][0] : h.s)} · ${esc(who(h.por))}${h.obs ? ' — ' + esc(h.obs) : ''}</span>`).join(''); }
 function validPanel(v, w, st){
   const ocs = v.ocorrencias || [];
-  const abertas = ocs.filter(o => ((w.acoes||{})[o.id]||{}).status !== 'resolvida').length;
+  const abertas = ocs.filter(o => ocAberta(v._id, o)).length;
   const areasOk = w.compras && w.compras.ok && w.operacoes && w.operacoes.ok && w.manutencao && w.manutencao.ok;
   const bt = (s, t, cls, dis, why) => `<button type="button" class="btn ${cls||''}" data-act="v-status" data-v="${s}" id="vs-${s}"${dis ? ' disabled' : ''}${why ? ` title="${esc(why)}"` : ''}>${t}</button>`;
   return `<section class="card stack" style="border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-50)">
@@ -792,13 +799,7 @@ function renderValidacao(){
     ${bloco('Aguardando validação', grp(['enviado']), 'Nenhuma auditoria nova para validar.')}
     ${bloco('Em validação', grp(['em_validacao']), 'Nenhuma auditoria em validação.')}
     ${bloco('Ação corretiva', grp(['acao_corretiva']), 'Nenhuma auditoria aguardando correção.')}
-    <section class="stack tight"><div class="sec-t">Plano de ação em aberto <span class="n">${acoes.length}</span></div>
-      <div class="vlist cols">${acoes.map(({v,o,i,a}) => { const venc = a.prazo && a.prazo < hoje; return `<button type="button" class="vitem" data-act="ver-visita" data-id="${esc(v._id)}" style="border-left:4px solid ${o.crit === 'critica' ? 'var(--bad)' : o.crit === 'alta' ? 'var(--warn)' : 'var(--line-2)'}">
-        <span class="t">${esc(evName(v.evento))}</span>${pill(ACAO[a.status||'aberta'][0], ACAO[a.status||'aberta'][1])}
-        <span class="s" style="color:var(--ink-2)">${esc(o.desc || 'Sem descrição')}</span>
-        <span class="s">${pill(CRIT[o.crit][0], CRIT[o.crit][1])}${reincidente(v,o) ? pill('Reincidente','warn') : ''}<span class="mono">${esc(v.codigo)}-O${i+1}</span><span>${ic('user','sm')}${esc(a.resp || 'sem responsável')}</span><span style="${venc ? 'color:var(--bad);font-weight:700' : ''}">${ic('cal','sm')}${a.prazo ? fiso(a.prazo) + (venc ? ' · vencido' : '') : 'sem prazo'}</span></span>
-      </button>`; }).join('') || `<div class="empty" style="grid-column:1/-1">Nenhuma ocorrência em aberto.</div>`}</div>
-    </section>
+    <section class="card row between" aria-label="Pendências"><div><h2>Ações corretivas</h2><p class="note" style="margin:2px 0 0">${[...S.acoes.values()].filter(acAbertaSt).length} em aberto · <b style="color:var(--bad)">${[...S.acoes.values()].filter(acAtrasada).length} atrasada(s)</b> · ${[...S.acoes.values()].filter(x => x.status === 'aguardando_validacao').length} aguardando validação da correção</p></div><button class="btn" type="button" data-act="tab" data-v="pendencias">${ic('pend')}Abrir Central de Pendências</button></section>
     ${bloco('Devolvidas ao auditor', grp(['devolvida']), 'Nenhuma auditoria devolvida.')}
     ${bloco('Validadas e encerradas', grp(['validado','encerrado']).reverse(), 'Nenhuma auditoria validada ainda.')}
   </div>`;
@@ -839,6 +840,7 @@ document.addEventListener('click', async ev => {
   else if(a === 'enviar'){ enviar(); }
   else if(a === 'foto'){ S.fotoKey = b.dataset.key; const fi = $('#file-in'); fi.value = ''; fi.click(); }
   else if(a === 'rmfoto'){
+    if(b.dataset.key === 'acform' || b.dataset.key === 'acev'){ const arr = b.dataset.key === 'acform' ? S.acForm.fotos : (S.acEvFotos || []); const i = arr.indexOf(b.dataset.fid); if(i >= 0) arr.splice(i, 1); acaoSheet(S.acAberta); return; }
     const key = b.dataset.key; const isAcao = key.startsWith('acao:');
     const arr = fotoArr(key, isAcao ? S.rep.w : S.edit.d, true); const i = arr.indexOf(b.dataset.fid); if(i >= 0) arr.splice(i, 1);
     if(isAcao){ saveVal(); renderReport(); } else { queueSave(); keepScroll(renderEditor); }
@@ -1130,7 +1132,7 @@ function ic(n, c){ return `<svg class="ic${c ? ' ' + c : ''}" aria-hidden="true"
 function iniciais(s){ const p = String(s || '').replace(/@.*/, '').trim().split(/[\s._-]+/).filter(Boolean); return ((p[0]||'?')[0] + (p.length > 1 ? p[p.length-1][0] : '')).toUpperCase(); }
 function quem(v){ return v.auditorNome || who(v.auditor); }
 const PAPEL_DESC = {pendente:'Sem acesso até ser liberado', auditor:'Faz visitas e envia para validação', admin:'Valida visitas, cadastra eventos e libera auditores', master:'Controle total da plataforma', bloqueado:'Acesso suspenso'};
-function abrirSheet(html){ const d = $('#sheet'); d.innerHTML = html; if(!d.open) d.showModal(); }
+function abrirSheet(html, cls){ const d = $('#sheet'); d.className = 'sheet' + (cls ? ' ' + cls : ''); d.innerHTML = html; if(!d.open) d.showModal(); }
 function fecharSheet(){ const d = $('#sheet'); if(d.open) d.close(); }
 $('#sheet').addEventListener('click', e => { if(e.target.id === 'sheet') fecharSheet(); });
 function contaSheet(){
@@ -1317,6 +1319,329 @@ document.addEventListener('click', ev => {
 });
 document.addEventListener('keydown', e => { if(e.key === 'Escape' && document.body.classList.contains('side-over')){ document.body.classList.remove('side-over'); aplicarSide(); } });
 document.addEventListener('input', e => { const t = e.target; if(t.dataset && t.dataset.pq !== undefined){ S.pq = t.value; const pos = t.selectionStart; renderUsuarios(); const n = $('#pq'); if(n){ n.focus(); n.setSelectionRange(pos, pos); } } });
+
+/* ===================== Central de Pendências (ações corretivas) ===================== */
+const AC_ST = {aberta:['Aberta','warn'], em_andamento:['Em andamento','info'], aguardando_validacao:['Aguardando validação','brand'], concluida:['Concluída','ok'], reaberta:['Reaberta','bad']};
+const DEPS = {lider:'Líder do evento', compras:'Compras', operacoes:'Operações', manutencao:'Manutenção', gestao:'Gestão PEX'};
+const AC_PAG = 15;
+const hojeISO = () => { const d = new Date(); return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; };
+const acCod = a => 'AC-' + String(a.numero || 0).padStart(4, '0');
+const acAtrasada = a => ['aberta','em_andamento','reaberta'].includes(a.status) && a.prazo && a.prazo < hojeISO();
+const acAbertaSt = a => a.status !== 'concluida';
+function acaoDaOc(vid, ocId){ for(const a of S.acoes.values()) if(a.visita === vid && a.ocorrencia === ocId) return a; return null; }
+function acPill(a){ return pill(AC_ST[a.status][0], AC_ST[a.status][1]) + (acAtrasada(a) ? pill('Atrasada', 'bad') : ''); }
+
+async function carregarAcoes(){
+  if(!S.me.admin) return;
+  try{ const l = await PEX.acoes.listar(); S.acoes = new Map(l.map(a => [a.id, a])); S.loaded.ac = true; contarAcoes(); refresh(true); }
+  catch(e){ S.acErro = true; if(S.tab === 'pendencias') render(); }
+}
+function contarAcoes(){
+  const l = [...S.acoes.values()];
+  const n = l.filter(a => acAtrasada(a) || a.status === 'aguardando_validacao').length;
+  setCt('ct-pend', n, S.me.admin && n);
+}
+function acFiltradas(){
+  const f = S.pf; const q = (f.q || '').toLowerCase();
+  return [...S.acoes.values()].filter(a => {
+    if(q && !(acCod(a) + ' ' + a.problema + ' ' + a.local + ' ' + a.responsavel + ' ' + evName(a.evento)).toLowerCase().includes(q)) return false;
+    if(f.parque && a.evento !== f.parque) return false;
+    if(f.status === 'abertas' && !['aberta','reaberta'].includes(a.status)) return false;
+    if(f.status === 'atrasadas' && !acAtrasada(a)) return false;
+    if(f.status === 'criticas' && !(a.criticidade === 'critica' && acAbertaSt(a))) return false;
+    if(f.status && !['abertas','atrasadas','criticas'].includes(f.status) && a.status !== f.status) return false;
+    if(f.crit && a.criticidade !== f.crit) return false;
+    if(f.dep && (f.dep === 'sem' ? a.departamento : a.departamento !== f.dep)) return false;
+    if(f.resp && (f.resp === 'sem' ? a.responsavel : a.responsavel !== f.resp)) return false;
+    if(f.origem === 'manual' && a.visita) return false;
+    if(f.origem && f.origem !== 'manual' && a.visita !== f.origem) return false;
+    if(f.de && a.identificado_em < f.de) return false;
+    if(f.ate && a.identificado_em > f.ate) return false;
+    return true;
+  });
+}
+function acOrdenar(l){
+  const {col, dir} = S.psort; const crit = {critica:0, alta:1, media:2, baixa:3}; const st = {reaberta:0, aberta:1, em_andamento:2, aguardando_validacao:3, concluida:4};
+  const val = a => col === 'numero' ? a.numero : col === 'parque' ? evName(a.evento) : col === 'crit' ? crit[a.criticidade] : col === 'dep' ? (DEPS[a.departamento] || 'zz') : col === 'resp' ? (a.responsavel || 'zz') : col === 'prazo' ? (a.prazo || '9999') : col === 'status' ? st[a.status] : col === 'criada' ? a.criado_em : a.problema;
+  return l.sort((x, y) => { const a = val(x), b = val(y); const r = typeof a === 'number' ? a - b : String(a).localeCompare(String(b), 'pt-BR', {numeric: true}); return (r || x.numero - y.numero) * dir; });
+}
+
+function renderPendencias(){
+  if(!S.me.admin){ go('painel'); return; }
+  const head = pageHead('Central de Pendências', 'Problemas encontrados nas auditorias, com responsável, prazo e validação da correção pela administração.',
+    `<button class="btn pri" type="button" data-act="ac-nova">${ic('plus')}Nova ação</button>`);
+  if(S.acErro){ $('#main').innerHTML = `<div class="stack">${head}<div class="banner bad">${ic('alerta')}<div>Não foi possível carregar as ações. Verifique a conexão. <button class="link" type="button" data-act="ac-recarregar">Tentar de novo</button></div></div></div>`; return; }
+  if(!S.loaded.ac){ $('#main').innerHTML = `<div class="stack">${head}<div class="kpis six">${'<div class="kpi"><span class="skel" style="width:60%"></span><span class="skel" style="height:26px;width:40%"></span></div>'.repeat(6)}</div><div class="skel" style="height:280px"></div></div>`; return; }
+  const all = [...S.acoes.values()]; const f = S.pf;
+  const k = {
+    abertas: all.filter(a => ['aberta','reaberta'].includes(a.status)).length,
+    em_andamento: all.filter(a => a.status === 'em_andamento').length,
+    aguardando_validacao: all.filter(a => a.status === 'aguardando_validacao').length,
+    atrasadas: all.filter(acAtrasada).length,
+    concluida: all.filter(a => a.status === 'concluida').length,
+    criticas: all.filter(a => a.criticidade === 'critica' && acAbertaSt(a)).length
+  };
+  const kpi = (key, t, n, cls, sub) => `<button type="button" class="kpi ${cls || ''}" data-act="pf-status" data-v="${key}" aria-pressed="${f.status === key}"><small>${t}</small><b>${n}</b><i>${sub}</i></button>`;
+  const lista = acOrdenar(acFiltradas()); const pags = Math.max(1, Math.ceil(lista.length / AC_PAG)); if(S.ppage > pags) S.ppage = pags;
+  const pg = lista.slice((S.ppage - 1) * AC_PAG, S.ppage * AC_PAG);
+  const parques = [...S.eventos.entries()].map(([id, e]) => ({id, nome: e.nome})).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const resps = [...new Set(all.map(a => a.responsavel).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  const origens = [...new Set(all.map(a => a.visita).filter(Boolean))].map(id => S.visitas.get(id)).filter(Boolean);
+  const sel = (key, rot, todos, opts) => `<label class="f">${rot}<select data-pf="${key}"><option value="">${todos}</option>${opts.map(([v, t]) => `<option value="${esc(v)}"${f[key] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+  const th = (c, t, extra) => `<th${extra || ''}><button type="button" class="th-sort" data-act="psort" data-c="${c}"${S.psort.col === c ? ` aria-sort="${S.psort.dir > 0 ? 'ascending' : 'descending'}"` : ''}>${t}</button></th>`;
+  const filtrando = Object.values(f).some(Boolean);
+  $('#main').innerHTML = `<div class="stack">
+    ${head}
+    <section class="kpis six" aria-label="Indicadores das ações">
+      ${kpi('atrasadas', 'Atrasadas', k.atrasadas, k.atrasadas ? 'bad' : '', 'prazo vencido')}
+      ${kpi('criticas', 'Críticas abertas', k.criticas, k.criticas ? 'bad' : '', 'prioridade máxima')}
+      ${kpi('aguardando_validacao', 'Aguardando validação', k.aguardando_validacao, k.aguardando_validacao ? 'warn' : '', 'correção informada')}
+      ${kpi('abertas', 'Abertas', k.abertas, '', 'inclui reabertas')}
+      ${kpi('em_andamento', 'Em andamento', k.em_andamento, '', 'em execução')}
+      ${kpi('concluida', 'Concluídas', k.concluida, 'ok', 'correção aprovada')}
+    </section>
+    <section class="card stack tight" aria-label="Filtros">
+      <div class="toolbar">
+        <div class="search">${ic('busca')}<input type="search" id="pf-q" data-pf="q" placeholder="Buscar por código, problema, local, responsável ou parque" value="${esc(f.q || '')}" aria-label="Buscar ações"></div>
+        ${filtrando ? `<button class="btn sm ghost" type="button" data-act="pf-limpar">${ic('x','sm')}Limpar filtros</button>` : ''}
+      </div>
+      <div class="fgrid ac-filtros">
+        ${sel('parque', 'Parque', 'Todos', parques.map(p => [p.id, p.nome]))}
+        ${sel('status', 'Status', 'Todos', [['abertas','Abertas e reabertas'],['atrasadas','Atrasadas'],['criticas','Críticas abertas'], ...Object.entries(AC_ST).map(([k, [t]]) => [k, t])])}
+        ${sel('crit', 'Criticidade', 'Todas', Object.entries(CRIT).map(([k, [t]]) => [k, t]))}
+        ${sel('dep', 'Departamento', 'Todos', [...Object.entries(DEPS), ['sem', 'Sem departamento']])}
+        ${sel('resp', 'Responsável', 'Todos', [...resps.map(r => [r, r]), ['sem', 'Sem responsável']])}
+        ${sel('origem', 'Auditoria de origem', 'Todas', [['manual', 'Criadas manualmente'], ...origens.map(v => [v._id, `${v.codigo} · ${evName(v.evento)}`])])}
+        <label class="f">Identificada a partir de<input type="date" data-pf="de" value="${esc(f.de || '')}"></label>
+        <label class="f">até<input type="date" data-pf="ate" value="${esc(f.ate || '')}"></label>
+      </div>
+    </section>
+    <div class="row between"><span class="note" style="margin:0"><b style="color:var(--ink)">${lista.length}</b> ${lista.length === 1 ? 'ação' : 'ações'}${filtrando ? ' com os filtros atuais' : ''}</span></div>
+    ${lista.length ? `
+    <div class="dt-wrap ac-dt"><table>
+      <thead><tr>${th('numero','Ação')}${th('parque','Parque')}${th('problema','Problema')}${th('crit','Criticidade')}${th('dep','Departamento')}${th('resp','Responsável')}${th('prazo','Prazo')}${th('status','Status')}${th('criada','Criada')}</tr></thead>
+      <tbody>${pg.map(a => `<tr class="click" data-act="ac-abrir" data-id="${esc(a.id)}" tabindex="0">
+        <td class="mono" style="white-space:nowrap">${acCod(a)}</td>
+        <td><b>${esc(evName(a.evento))}</b>${a.visita && S.visitas.get(a.visita) ? `<span class="sub">${esc(S.visitas.get(a.visita).codigo)}</span>` : '<span class="sub">Manual</span>'}</td>
+        <td style="max-width:320px">${esc(a.problema)}${a.local ? `<span class="sub">${esc(a.local)}</span>` : ''}</td>
+        <td>${pill(CRIT[a.criticidade][0], CRIT[a.criticidade][1])}</td>
+        <td>${a.departamento ? esc(DEPS[a.departamento]) : '<span class="muted">—</span>'}</td>
+        <td>${a.responsavel ? esc(a.responsavel) : '<span class="muted">—</span>'}</td>
+        <td class="num" style="${acAtrasada(a) ? 'color:var(--bad);font-weight:700' : ''}">${a.prazo ? fiso(a.prazo) : '<span class="muted">—</span>'}</td>
+        <td>${acPill(a)}</td>
+        <td class="num">${fd(new Date(a.criado_em).getTime())}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>
+    <div class="vlist ac-cards">${pg.map(a => `<button type="button" class="vitem" data-act="ac-abrir" data-id="${esc(a.id)}" style="border-left:3px solid ${a.criticidade === 'critica' ? 'var(--bad)' : a.criticidade === 'alta' ? 'var(--warn)' : 'var(--line-2)'}">
+        <span class="t">${esc(a.problema)}</span><span class="mono">${acCod(a)}</span>
+        <span class="s"><span>${ic('parque','sm')}${esc(evName(a.evento))}</span>${a.responsavel ? `<span>${ic('user','sm')}${esc(a.responsavel)}</span>` : ''}${a.prazo ? `<span style="${acAtrasada(a) ? 'color:var(--bad);font-weight:700' : ''}">${ic('cal','sm')}${fiso(a.prazo)}</span>` : ''}</span>
+        <span class="s">${pill(CRIT[a.criticidade][0], CRIT[a.criticidade][1])}${acPill(a)}${a.departamento ? `<span>${esc(DEPS[a.departamento])}</span>` : ''}</span>
+      </button>`).join('')}</div>
+    ${pags > 1 ? `<div class="pager"><span>${(S.ppage - 1) * AC_PAG + 1}–${Math.min(S.ppage * AC_PAG, lista.length)} de ${lista.length}</span><div class="row"><button class="btn sm" type="button" data-act="ppage" data-v="${S.ppage - 1}"${S.ppage <= 1 ? ' disabled' : ''}>${ic('left','sm')}Anterior</button><span>Página ${S.ppage} de ${pags}</span><button class="btn sm" type="button" data-act="ppage" data-v="${S.ppage + 1}"${S.ppage >= pags ? ' disabled' : ''}>Próxima${ic('right','sm')}</button></div></div>` : ''}`
+    : `<div class="empty">${ic('flag')}<b>${all.length ? 'Nenhuma ação com esses filtros' : 'Nenhuma ação corretiva ainda'}</b>${all.length ? 'Ajuste ou limpe os filtros.' : 'As ações nascem das ocorrências das auditorias (no relatório da auditoria) ou pelo botão Nova ação.'}</div>`}
+  </div>`;
+}
+
+/* ---------- Detalhe da ação ---------- */
+function acaoSheet(id){
+  const a = S.acoes.get(id); if(!a) return;
+  S.acAberta = id; if(!S.acForm || S.acForm.id !== id) S.acForm = {id, tipo: null, texto: '', fotos: []};
+  const v = a.visita ? S.visitas.get(a.visita) : null; const fe = a.status === 'concluida';
+  const fm = S.acForm;
+  const btn = (tipo, t, cls) => `<button type="button" class="btn ${cls || ''}" data-act="ac-tr" data-t="${tipo}">${t}</button>`;
+  const acoesSt = {
+    aberta: btn('em_andamento', 'Iniciar execução') + btn('correcao', ic('check') + 'Informar correção', 'pri'),
+    reaberta: btn('em_andamento', 'Iniciar execução') + btn('correcao', ic('check') + 'Informar correção', 'pri'),
+    em_andamento: btn('correcao', ic('check') + 'Informar correção', 'pri'),
+    aguardando_validacao: btn('rejeitar', ic('x') + 'Rejeitar correção', 'danger') + btn('aprovar', ic('check') + 'Aprovar correção', 'pri'),
+    concluida: btn('reabrir', 'Reabrir ação', 'danger')
+  }[a.status];
+  const rotForm = {correcao: ['Informar correção', 'Descreva o que foi feito para corrigir e anexe a foto da correção. A ação fica aguardando a sua validação.', 'O que foi feito'],
+    aprovar: ['Aprovar correção', 'Confirme que a correção resolveu o problema. A ação será concluída.', 'Comentário (opcional)'],
+    rejeitar: ['Rejeitar correção', 'Explique por que a correção não foi aceita. A ação volta para correção como Reaberta.', 'Motivo da rejeição (obrigatório)'],
+    reabrir: ['Reabrir ação', 'Explique por que a ação precisa ser reaberta.', 'Motivo (obrigatório)']}[fm.tipo];
+  const campo = (rot, html) => `<label class="f">${rot}${html}</label>`;
+  const opt = (obj, cur, vazio) => (vazio ? `<option value="">${vazio}</option>` : '') + Object.entries(obj).map(([k, t]) => `<option value="${k}"${cur === k ? ' selected' : ''}>${Array.isArray(t) ? t[0] : t}</option>`).join('');
+  const dis = fe ? ' disabled' : '';
+  abrirSheet(`<div class="sheet-in">
+    <div style="display:grid;gap:6px">
+      <div class="row" style="gap:6px"><span class="mono">${acCod(a)}</span>${pill(CRIT[a.criticidade][0], CRIT[a.criticidade][1])}${acPill(a)}</div>
+      <div class="t" style="font-size:18px;font-weight:780;line-height:1.3">${esc(a.problema)}</div>
+      <div class="ed-meta"><span>${ic('parque','sm')}${esc(evName(a.evento))}</span><span>${ic('cal','sm')}identificada em ${fiso(a.identificado_em)}</span>${v ? `<span>${ic('visitas','sm')}<button type="button" class="link" data-act="ac-ver-visita" data-id="${esc(v._id)}">Auditoria ${esc(v.codigo)}</button></span>` : '<span>Criada manualmente</span>'}${a.item && ITEM_INDEX[a.item] ? `<span>Item: ${esc(ITEM_INDEX[a.item].t)}</span>` : ''}</div>
+    </div>
+    ${a.criticidade === 'critica' && acAbertaSt(a) ? `<div class="banner bad">${ic('alerta')}<div><b>Prioridade máxima.</b> Risco imediato: confirme que a área está suspensa e que a equipe técnica foi acionada.</div></div>` : ''}
+    ${acAtrasada(a) ? `<div class="banner warn">${ic('relogio')}<div>O prazo venceu em ${fiso(a.prazo)}. Cobre o responsável ou ajuste o prazo.</div></div>` : ''}
+    <div class="sheet-sec"><h3>Andamento</h3>
+      ${fm.tipo ? `<div class="card flat stack tight" id="ac-form"><div><b>${rotForm[0]}</b><p class="note" style="margin:2px 0 0">${rotForm[1]}</p></div>
+        <textarea id="ac-form-txt" data-acform placeholder="${rotForm[2]}">${esc(fm.texto)}</textarea>
+        ${fm.tipo === 'correcao' ? photos('acform', fm.fotos, true) : ''}
+        <p class="f-err" id="ac-form-err" hidden></p>
+        <div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-act="ac-tr-cancel">Cancelar</button><button type="button" class="btn ${fm.tipo === 'rejeitar' || fm.tipo === 'reabrir' ? 'danger solid' : 'pri'}" data-act="ac-tr-ok" id="ac-tr-ok">${rotForm[0]}</button></div></div>`
+      : `<div class="row">${acoesSt}</div>`}
+      <p class="note" style="margin:0">Fluxo: Aberta → Em andamento → Aguardando validação → Concluída. A correção só é concluída quando a administração aprova.</p>
+    </div>
+    <div class="sheet-sec"><h3>Dados da ação</h3>
+      <form id="ac-edit" class="stack tight" data-id="${esc(a.id)}">
+        ${campo('Problema', `<textarea name="problema" required${dis}>${esc(a.problema)}</textarea>`)}
+        <div class="fgrid">
+          ${campo('Local', `<input type="text" name="local" value="${esc(a.local)}"${dis}>`)}
+          ${campo('Categoria', `<select name="eixo"${dis}>${opt(CATEG, a.eixo, 'Sem categoria')}</select>`)}
+          ${campo('Criticidade', `<select name="criticidade"${dis}>${opt(CRIT, a.criticidade)}</select>`)}
+        </div>
+        <div class="fgrid">
+          ${campo('Departamento responsável', `<select name="departamento"${dis}>${opt(DEPS, a.departamento, 'Definir departamento')}</select>`)}
+          ${campo('Responsável pela execução', `<input type="text" name="responsavel" value="${esc(a.responsavel)}" list="dl-resp" placeholder="Nome completo"${dis}>`)}
+          ${campo('Prazo', `<input type="date" name="prazo" value="${esc(a.prazo || '')}"${dis}>`)}
+        </div>
+        <datalist id="dl-resp">${[...new Set([...S.acoes.values()].map(x => x.responsavel).filter(Boolean))].map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+        ${campo('Ação necessária', `<textarea name="acao" placeholder="O que precisa ser feito"${dis}>${esc(a.acao)}</textarea>`)}
+        ${campo('Observações', `<textarea name="observacoes" placeholder="Anotações da administração"${dis}>${esc(a.observacoes)}</textarea>`)}
+        ${fe ? '<p class="note" style="margin:0">Ação concluída: para alterar, reabra a ação.</p>' : `<div class="row" style="justify-content:flex-end"><button type="submit" class="btn pri" id="ac-salvar">Salvar alterações</button></div>`}
+      </form>
+    </div>
+    ${(a.fotos || []).length ? `<div class="sheet-sec"><h3>Fotos do problema</h3>${photos('', a.fotos, false)}</div>` : ''}
+    <div class="sheet-sec"><h3>Evidências · ${(a.evidencias || []).length}</h3>
+      ${(a.evidencias || []).slice().reverse().map(e => `<div class="rep-it"><span><b>${e.tipo === 'correcao' ? 'Correção informada' : 'Registro'}</b>${e.texto ? ` — ${esc(e.texto)}` : ''}</span><span class="note" style="margin:0">${e.em ? fdt(new Date(e.em).getTime()) : ''}</span>${(e.fotos || []).length ? photos('', e.fotos, false) : ''}</div>`).join('') || '<p class="note" style="margin:0">Nenhuma evidência registrada.</p>'}
+      ${S.acEvAberto ? `<div class="card flat stack tight"><textarea id="ac-ev-txt" data-acev placeholder="Ex.: conferido por telefone com o líder">${esc(S.acEvTexto || '')}</textarea>${photos('acev', S.acEvFotos || [], true)}<div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-act="ac-ev-cancel">Cancelar</button><button type="button" class="btn pri" data-act="ac-ev-ok">Registrar evidência</button></div></div>`
+        : `<div><button type="button" class="btn sm" data-act="ac-ev-abrir">${ic('plus','sm')}Registrar evidência</button></div>`}
+    </div>
+    <div class="sheet-sec"><h3>Histórico</h3><div class="hist" id="ac-hist"><span class="skel" style="width:70%"></span><span class="skel" style="width:50%"></span></div></div>
+    <button class="btn ghost block" type="button" data-act="sheet-close">Fechar</button>
+  </div>`, 'wide');
+  carregarHist(id);
+}
+const CAMPO_ROT = {problema:'Problema', local:'Local', eixo:'Categoria', criticidade:'Criticidade', departamento:'Departamento', responsavel:'Responsável', acao:'Ação necessária', prazo:'Prazo', observacoes:'Observações'};
+function valHist(c, v){ if(v == null || v === '') return '—'; if(c === 'departamento') return DEPS[v] || v; if(c === 'criticidade') return (CRIT[v] || [v])[0]; if(c === 'eixo') return CATEG[v] || v; if(c === 'prazo') return fiso(v); return v; }
+async function carregarHist(id){
+  let hs; try{ hs = await PEX.acoes.historico(id); }catch(e){ const el = $('#ac-hist'); if(el) el.textContent = 'Não foi possível carregar o histórico.'; return; }
+  const ids = [...new Set(hs.map(h => h.por).filter(Boolean))].filter(x => !S.names[x]);
+  if(ids.length && S.user){ try{ const ps = await S.user.profiles(ids); Object.values(ps).forEach(p => { S.names[p.id] = p.isMe ? (p.name ? p.name + ' (você)' : 'Você') : p.name; }); }catch(e){} }
+  const el = $('#ac-hist'); if(!el || S.acAberta !== id) return;
+  el.innerHTML = hs.slice().reverse().map(h => {
+    const quemFez = h.por ? esc(S.names[h.por] || 'Administração') : 'Sistema';
+    const o = h.tipo === 'criada' ? 'Ação criada' : h.tipo === 'status' ? `Status: ${esc((AC_ST[h.de] || [h.de || '—'])[0])} → <b>${esc((AC_ST[h.para] || [h.para])[0])}</b>` : h.tipo === 'evidencia' ? 'Evidência registrada' : `${esc(CAMPO_ROT[h.campo] || h.campo)}: ${esc(valHist(h.campo, h.de))} → <b>${esc(valHist(h.campo, h.para))}</b>`;
+    return `<span>${fdt(new Date(h.em).getTime())} · ${quemFez} · ${o}${h.texto && h.tipo !== 'criada' ? ` — “${esc(h.texto)}”` : ''}</span>`;
+  }).join('') || '<span>Sem registros.</span>';
+}
+
+/* ---------- Nova ação (manual ou a partir de uma ocorrência) ---------- */
+function novaAcaoSheet(pre){
+  const p = pre || {}; S.acNova = {fotos: [...(p.fotos || [])], ...p};
+  const evs = [...S.eventos.entries()].map(([id, e]) => ({id, nome: e.nome})).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const v = p.visita ? S.visitas.get(p.visita) : null;
+  const opt = (obj, cur, vazio) => (vazio ? `<option value="">${vazio}</option>` : '') + Object.entries(obj).map(([k, t]) => `<option value="${k}"${cur === k ? ' selected' : ''}>${Array.isArray(t) ? t[0] : t}</option>`).join('');
+  abrirSheet(`<div class="sheet-in"><form id="ac-nova" class="stack tight" novalidate>
+    <div><div class="t" style="font-size:18px;font-weight:780">Nova ação corretiva</div><p class="note" style="margin:2px 0 0">${v ? `A partir da ocorrência da auditoria <b>${esc(v.codigo)}</b>.` : 'Ação criada manualmente pela administração.'}</p></div>
+    <label class="f">Parque<select name="evento" required${v ? ' disabled' : ''}><option value="">Escolha o parque</option>${evs.map(e => `<option value="${esc(e.id)}"${p.evento === e.id ? ' selected' : ''}>${esc(e.nome)}</option>`).join('')}</select></label>
+    <label class="f">Problema<textarea name="problema" required placeholder="O que foi encontrado">${esc(p.problema || '')}</textarea></label>
+    <div class="fgrid">
+      <label class="f">Local<input type="text" name="local" value="${esc(p.local || '')}" placeholder="Onde exatamente"></label>
+      <label class="f">Categoria<select name="eixo">${opt(CATEG, p.eixo, 'Sem categoria')}</select></label>
+      <label class="f">Criticidade<select name="criticidade">${opt(CRIT, p.criticidade || 'media')}</select></label>
+    </div>
+    <div class="fgrid">
+      <label class="f">Departamento responsável<select name="departamento">${opt(DEPS, p.departamento, 'Definir depois')}</select></label>
+      <label class="f">Responsável pela execução<input type="text" name="responsavel" list="dl-resp2" placeholder="Nome completo"></label>
+      <label class="f">Prazo<input type="date" name="prazo" min="${hojeISO()}"></label>
+    </div>
+    <datalist id="dl-resp2">${[...new Set([...S.acoes.values()].map(x => x.responsavel).filter(Boolean))].map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+    <label class="f">Ação necessária<textarea name="acao" placeholder="O que precisa ser feito">${esc(p.acao || '')}</textarea></label>
+    ${(S.acNova.fotos || []).length ? `<div><div class="grp-t" style="margin-top:0">Fotos da ocorrência (vão junto)</div>${photos('', S.acNova.fotos, false)}</div>` : ''}
+    <p class="f-err" id="ac-nova-err" hidden></p>
+    <div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-act="sheet-close">Cancelar</button><button type="submit" class="btn pri" id="ac-nova-ok">Criar ação</button></div>
+  </form></div>`, 'wide');
+}
+function preDaOcorrencia(vid, ocId){
+  const v = S.visitas.get(vid); if(!v) return null; const o = (v.ocorrencias || []).find(x => x.id === ocId); if(!o) return null;
+  return {evento: v.evento, visita: vid, ocorrencia: o.id, item: o.item || null, origem: 'ocorrencia', problema: o.desc || '', local: o.local || '', eixo: o.eixo || null, criticidade: o.crit || 'media', acao: o.acao || '', fotos: o.fotos || [], identificado_em: v.enviadoEm ? new Date(v.enviadoEm).toISOString().slice(0, 10) : hojeISO()};
+}
+async function criarAcoesDaVisita(vid){
+  const v = S.visitas.get(vid); const sem = (v.ocorrencias || []).filter(o => !acaoDaOc(vid, o.id));
+  let n = 0;
+  for(const o of sem){ try{ const a = await PEX.acoes.criar(preDaOcorrencia(vid, o.id)); S.acoes.set(a.id, a); n++; }catch(e){ toast(e.message || 'Não foi possível criar todas as ações.', 'bad'); break; } }
+  contarAcoes(); if(n) toast(`${n} ${n === 1 ? 'ação criada' : 'ações criadas'} na Central de Pendências.`, 'ok'); renderReport();
+}
+
+/* ---------- Eventos ---------- */
+function acAtualizar(a){ S.acoes.set(a.id, a); contarAcoes(); if(S.tab === 'pendencias' && !S.edit && !S.rep) renderPendencias(); if(S.rep) renderReport(); }
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest('[data-act]'); if(!b) return; const act = b.dataset.act;
+  if(act === 'ac-nova'){ novaAcaoSheet(); }
+  else if(act === 'ac-recarregar'){ S.acErro = false; carregarAcoes(); render(); }
+  else if(act === 'ac-abrir'){ S.acEvAberto = false; acaoSheet(b.dataset.id); }
+  else if(act === 'ac-da-oc'){ const pre = preDaOcorrencia(b.dataset.v, b.dataset.o); if(pre) novaAcaoSheet(pre); }
+  else if(act === 'ac-todas'){ b.disabled = true; await criarAcoesDaVisita(b.dataset.v); }
+  else if(act === 'ac-ver-visita'){ fecharSheet(); openReport(b.dataset.id); }
+  else if(act === 'pf-status'){ S.pf.status = S.pf.status === b.dataset.v ? '' : b.dataset.v; S.ppage = 1; renderPendencias(); }
+  else if(act === 'pf-limpar'){ S.pf = {}; S.ppage = 1; renderPendencias(); }
+  else if(act === 'psort'){ const c = b.dataset.c; S.psort = {col: c, dir: S.psort.col === c ? -S.psort.dir : 1}; renderPendencias(); }
+  else if(act === 'ppage'){ S.ppage = +b.dataset.v; renderPendencias(); window.scrollTo(0, 0); }
+  else if(act === 'ac-tr'){
+    const t = b.dataset.t;
+    if(t === 'em_andamento'){ b.disabled = true; try{ acAtualizar(await PEX.acoes.transicao(S.acAberta, 'em_andamento')); toast('Ação em andamento.', 'ok'); acaoSheet(S.acAberta); }catch(e){ b.disabled = false; toast(e.message || 'Não foi possível mudar o status.', 'bad'); } return; }
+    S.acForm = {id: S.acAberta, tipo: t, texto: '', fotos: []}; acaoSheet(S.acAberta); const x = $('#ac-form-txt'); if(x) x.focus();
+  }
+  else if(act === 'ac-tr-cancel'){ S.acForm = {id: S.acAberta, tipo: null, texto: '', fotos: []}; acaoSheet(S.acAberta); }
+  else if(act === 'ac-tr-ok'){
+    const fm = S.acForm; const err = $('#ac-form-err'); const txt = (fm.texto || '').trim();
+    const para = {correcao: 'aguardando_validacao', aprovar: 'concluida', rejeitar: 'reaberta', reabrir: 'reaberta'}[fm.tipo];
+    if(fm.tipo === 'correcao' && !txt && !fm.fotos.length){ err.textContent = 'Descreva o que foi feito ou anexe uma foto da correção.'; err.hidden = false; return; }
+    if((fm.tipo === 'rejeitar' || fm.tipo === 'reabrir') && !txt){ err.textContent = 'Informe o motivo.'; err.hidden = false; $('#ac-form-txt').setAttribute('aria-invalid', 'true'); return; }
+    b.disabled = true;
+    try{ const a = await PEX.acoes.transicao(fm.id, para, txt, fm.fotos); S.acForm = {id: fm.id, tipo: null, texto: '', fotos: []}; acAtualizar(a); toast({aguardando_validacao: 'Correção informada. Aguardando a sua validação.', concluida: 'Correção aprovada. Ação concluída.', reaberta: fm.tipo === 'rejeitar' ? 'Correção rejeitada. A ação foi reaberta.' : 'Ação reaberta.'}[para], 'ok'); acaoSheet(fm.id); }
+    catch(e){ b.disabled = false; err.textContent = e.message || 'Não foi possível concluir.'; err.hidden = false; }
+  }
+  else if(act === 'ac-ev-abrir'){ S.acEvAberto = true; S.acEvTexto = ''; S.acEvFotos = []; acaoSheet(S.acAberta); const x = $('#ac-ev-txt'); if(x) x.focus(); }
+  else if(act === 'ac-ev-cancel'){ S.acEvAberto = false; acaoSheet(S.acAberta); }
+  else if(act === 'ac-ev-ok'){
+    const txt = (S.acEvTexto || '').trim(); const fts = S.acEvFotos || [];
+    if(!txt && !fts.length){ toast('Escreva a evidência ou anexe uma foto.', 'bad'); return; }
+    b.disabled = true;
+    try{ acAtualizar(await PEX.acoes.evidencia(S.acAberta, txt, fts)); S.acEvAberto = false; toast('Evidência registrada.', 'ok'); acaoSheet(S.acAberta); }
+    catch(e){ b.disabled = false; toast(e.message || 'Não foi possível registrar.', 'bad'); }
+  }
+});
+document.addEventListener('keydown', e => { const r = e.target.closest && e.target.closest('tr.click[data-act="ac-abrir"]'); if(r && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); acaoSheet(r.dataset.id); } });
+document.addEventListener('input', e => {
+  const t = e.target;
+  if(t.dataset && t.dataset.acform !== undefined && S.acForm){ S.acForm.texto = t.value; t.removeAttribute('aria-invalid'); }
+  else if(t.dataset && t.dataset.acev !== undefined){ S.acEvTexto = t.value; }
+  else if(t.dataset && t.dataset.pf === 'q'){ S.pf.q = t.value; S.ppage = 1; const pos = t.selectionStart; renderPendencias(); const n = $('#pf-q'); if(n){ n.focus(); n.setSelectionRange(pos, pos); } }
+});
+document.addEventListener('change', e => { const t = e.target; if(t.dataset && t.dataset.pf && t.dataset.pf !== 'q'){ S.pf[t.dataset.pf] = t.value; S.ppage = 1; renderPendencias(); } });
+document.addEventListener('submit', async e => {
+  const f = e.target;
+  if(f.id === 'ac-edit'){
+    e.preventDefault(); const a = S.acoes.get(f.dataset.id); const fd2 = new FormData(f); const patch = {};
+    ['problema','local','eixo','criticidade','departamento','responsavel','acao','prazo','observacoes'].forEach(k => { let v = (fd2.get(k) ?? '').toString().trim(); if(['eixo','departamento','prazo'].includes(k) && !v) v = null; if((a[k] ?? null) !== v && !(a[k] === '' && v === '')) patch[k] = v ?? ''; });
+    if(patch.prazo === '') patch.prazo = null; if(patch.eixo === '') patch.eixo = null; if(patch.departamento === '') patch.departamento = null;
+    if('problema' in patch && !patch.problema){ toast('O problema não pode ficar vazio.', 'bad'); return; }
+    if(!Object.keys(patch).length){ toast('Nenhuma alteração para salvar.'); return; }
+    const btn = $('#ac-salvar'); btn.disabled = true;
+    try{ acAtualizar(await PEX.acoes.atualizar(a.id, patch)); toast('Alterações salvas.', 'ok'); acaoSheet(a.id); }
+    catch(x){ btn.disabled = false; toast(x.message || 'Não foi possível salvar.', 'bad'); }
+  }
+  if(f.id === 'ac-nova'){
+    e.preventDefault(); const fd2 = new FormData(f); const n = S.acNova || {}; const err = $('#ac-nova-err');
+    const evento = n.visita ? n.evento : (fd2.get('evento') || '').toString(); const problema = (fd2.get('problema') || '').toString().trim();
+    if(!evento){ err.textContent = 'Escolha o parque.'; err.hidden = false; return; }
+    if(!problema){ err.textContent = 'Descreva o problema.'; err.hidden = false; return; }
+    const obj = {evento, problema, local: (fd2.get('local') || '').toString().trim(), eixo: fd2.get('eixo') || null, criticidade: fd2.get('criticidade') || 'media', departamento: fd2.get('departamento') || null,
+      responsavel: (fd2.get('responsavel') || '').toString().trim(), prazo: fd2.get('prazo') || null, acao: (fd2.get('acao') || '').toString().trim(), fotos: n.fotos || [], origem: n.origem || 'manual'};
+    if(n.visita){ obj.visita = n.visita; obj.ocorrencia = n.ocorrencia; obj.item = n.item; obj.identificado_em = n.identificado_em; }
+    const btn = $('#ac-nova-ok'); btn.disabled = true;
+    try{ const a = await PEX.acoes.criar(obj); acAtualizar(a); toast(`Ação ${acCod(a)} criada.`, 'ok'); acaoSheet(a.id); }
+    catch(x){ btn.disabled = false; err.textContent = /duplicate|23505/.test(x.message || '') ? 'Esta ocorrência já tem uma ação.' : (x.message || 'Não foi possível criar a ação.'); err.hidden = false; }
+  }
+});
+
+function acaoBox(v, o){
+  const a = acaoDaOc(v._id, o.id);
+  if(a) return `<div class="card flat" style="padding:12px 14px;display:grid;gap:8px"><div class="row between"><span class="mono">${acCod(a)}</span><span class="row" style="gap:6px">${acPill(a)}</span></div>
+    <div class="ed-meta" style="margin:0"><span>${ic('user','sm')}${esc(a.responsavel || 'Sem responsável')}</span><span>${esc(DEPS[a.departamento] || 'Sem departamento')}</span><span style="${acAtrasada(a) ? 'color:var(--bad);font-weight:700' : ''}">${ic('cal','sm')}${a.prazo ? 'prazo ' + fiso(a.prazo) : 'Sem prazo'}</span></div>
+    <div><button class="btn sm" type="button" data-act="ac-abrir" data-id="${esc(a.id)}">Abrir ação</button></div></div>`;
+  return `<div class="row"><button class="btn sm pri" type="button" data-act="ac-da-oc" data-v="${esc(v._id)}" data-o="${esc(o.id)}">${ic('plus','sm')}Criar ação corretiva</button><span class="note" style="margin:0">Vai para a Central de Pendências com o parque, a auditoria e as fotos já vinculados.</span></div>`;
+}
 
 init();
 </script>

@@ -486,3 +486,22 @@ dialog.modal::backdrop{background:rgba(6,12,10,.45)}
   dialog.modal[open]{animation:pop .16s ease-out} @keyframes pop{from{transform:scale(.98);opacity:0}to{transform:none;opacity:1}}
 }
 @media print{ .side,.appbar,.tabbar,.foot,.toast{display:none !important} .main-col{margin:0} body{background:#fff} }
+
+/* ---------- 20. Central de Pendências ---------- */
+.kpis.six{grid-template-columns:repeat(2,1fr)}
+@media (min-width:700px){ .kpis.six{grid-template-columns:repeat(3,1fr)} }
+@media (min-width:1200px){ .kpis.six{grid-template-columns:repeat(6,1fr)} }
+button.kpi{font:inherit;text-align:left;cursor:pointer;color:inherit}
+button.kpi:hover{border-color:var(--line-2);box-shadow:var(--sh-2)}
+button.kpi[aria-pressed="true"]{border-color:var(--brand);box-shadow:var(--ring)}
+.ac-filtros{grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr))}
+.ac-filtros label.f{font-size:12px}
+.ac-cards{display:none}
+@media (max-width:767px){ .ac-dt{display:none} .ac-cards{display:grid} }
+.ac-cards .vitem .t{font-size:14.5px}
+dialog.sheet.wide{max-width:760px}
+/* campos nunca passam da largura disponível (opções longas não podem alargar a página) */
+select{max-width:100%}
+.fgrid>*,.toolbar>*{min-width:0}
+.ac-filtros{grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr))}
+@media (min-width:1200px){ .ac-filtros{grid-template-columns:repeat(4,1fr)} }
