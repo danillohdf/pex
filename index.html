@@ -201,7 +201,7 @@ STEPS.forEach(s => (s.fotos||[]).forEach(([id,t]) => FOTO_INDEX[id] = t));
 
 /* ===================== Estado ===================== */
 const S = {db:null, assets:null, user:null, me:{id:null, admin:false, write:null},
-  eventos:new Map(), visitas:new Map(), val:new Map(), names:{}, loaded:{ev:false, vi:false, va:false, ac:false}, acoes:new Map(), pf:{}, psort:{col:'prazo', dir:1}, ppage:1,
+  eventos:new Map(), visitas:new Map(), val:new Map(), names:{}, loaded:{ev:false, vi:false, va:false, ac:false}, acoes:new Map(), pf:{}, psort:{col:'crit', dir:1}, ppage:1,
   tab:'painel', edit:null, rep:null, saving:false, pending:false, fotoKey:null, filt:{q:'', fr:'all'}, vfilt:'minhas'};
 const $ = (s, r=document) => r.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -716,6 +716,7 @@ function renderReport(){
         <div class="hist" style="margin-top:10px">${EIXOS.map(([k,t]) => v.notas[k] && v.notas[k].j ? `<span><b>${t}:</b> ${esc(v.notas[k].j)}</span>` : '').join('')}</div></div>
     </div>
     ${canAct ? validPanel(v, w, st) : (w.hist && w.hist.length ? `<section class="card"><h2>Validação</h2><div class="hist" style="margin-top:8px">${histHtml(w)}</div></section>` : '')}
+    ${canAct ? ncSecao(v) : ''}
     <section class="card rep-sec"><div class="card-h"><h2>Ocorrências e plano de ação</h2><span class="row" style="gap:8px"><span class="note" style="margin:0">${ocs.filter(o => ocAberta(v._id,o)).length} em aberto</span>${canAct && ocs.filter(o => !acaoDaOc(v._id, o.id)).length > 1 ? `<button class="btn sm" type="button" data-act="ac-todas" data-v="${esc(v._id)}">${ic('plus','sm')}Criar ações de todas</button>` : ''}</span></div>
       ${ocs.map((o,i) => { const a = (w.acoes||{})[o.id] || {}; const ast = a.status || 'aberta'; const venc = ast !== 'resolvida' && a.prazo && a.prazo < new Date().toISOString().slice(0,10); return `<div class="oc ${esc(o.crit)}">
         <div class="row" style="justify-content:space-between"><span><span class="mono">${esc(v.codigo)}-O${i+1}</span> · ${pill(CRIT[o.crit][0], CRIT[o.crit][1])} ${reincidente(v,o) ? pill('Reincidente','warn') : ''}</span>${admin ? (acaoDaOc(v._id, o.id) ? acPill(acaoDaOc(v._id, o.id)) : pill('Sem ação','warn')) : pill(ACAO[ast][0], ACAO[ast][1])}</div>
@@ -739,11 +740,12 @@ function renderReport(){
       <div>${its.map(i => { const a = v.itens[i.id] || {}; const r = a.r; return `<div class="rep-it"><span>${i.t}</span>${r === 'c' ? pill('Conforme','ok') : r === 'nc' ? pill('Não conforme','bad') : r === 'na' ? pill('N/A','') : pill('Sem resposta','warn')}${a.obs ? `<span class="o">${esc(a.obs)}</span>` : ''}${(a.fotos||[]).length ? photos('', a.fotos, false) : ''}</div>`; }).join('')}${((v.extras||{})[s.k]||[]).map(x => `<div class="rep-it"><span>Outro local: <b>${esc(x.local || '—')}</b></span>${x.r === 'c' ? pill('Conforme','ok') : x.r === 'nc' ? pill('Não conforme','bad') : pill('Sem resposta','warn')}${x.obs ? `<span class="o">${esc(x.obs)}</span>` : ''}${(x.fotos||[]).length ? photos('', x.fotos, false) : ''}</div>`).join('')}</div></section>`).join('')}
   </div>`;
 }
-function histHtml(w){ return (w.hist||[]).slice().reverse().map(h => `<span>${fdt(h.em)} · ${esc(ST[h.s] ? ST[h.s][0] : h.s)} · ${esc(who(h.por))}${h.obs ? ' — ' + esc(h.obs) : ''}</span>`).join(''); }
+function histHtml(w){ return (w.hist||[]).slice().reverse().map(h => `<span>${fdt(h.em)} · ${esc(ST[h.s] ? ST[h.s][0] : h.s === 'justificativa' ? 'Justificativa registrada' : h.s)} · ${esc(who(h.por))}${h.obs ? ' — ' + esc(h.obs) : ''}</span>`).join(''); }
 function validPanel(v, w, st){
   const ocs = v.ocorrencias || [];
   const abertas = ocs.filter(o => ocAberta(v._id, o)).length;
   const areasOk = w.compras && w.compras.ok && w.operacoes && w.operacoes.ok && w.manutencao && w.manutencao.ok;
+  const ncPend = ncPendentes(v).length;
   const bt = (s, t, cls, dis, why) => `<button type="button" class="btn ${cls||''}" data-act="v-status" data-v="${s}" id="vs-${s}"${dis ? ' disabled' : ''}${why ? ` title="${esc(why)}"` : ''}>${t}</button>`;
   return `<section class="card stack" style="border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-50)">
     <div class="card-h"><h2>Validação da administração</h2>${pill(ST[st][0], ST[st][1])}</div>
@@ -758,10 +760,10 @@ function validPanel(v, w, st){
       ${st === 'enviado' ? bt('em_validacao','Iniciar validação','pri') : ''}
       ${bt('devolvida','Devolver ao auditor','', st === 'devolvida' || st === 'encerrado')}
       ${bt('acao_corretiva','Pedir ação corretiva','', !ocs.length || st === 'acao_corretiva' || st === 'encerrado')}
-      ${bt('validado','Validar', st === 'em_validacao' || st === 'acao_corretiva' ? 'pri' : '', !areasOk || st === 'validado' || st === 'encerrado', 'Marque Compras, Operações e Manutenção')}
-      ${bt('encerrado','Encerrar visita', st === 'validado' ? 'pri' : '', st !== 'validado' || abertas > 0, 'Valide e resolva todas as ocorrências')}
+      ${bt('validado','Validar', st === 'em_validacao' || st === 'acao_corretiva' ? 'pri' : '', !areasOk || ncPend > 0 || st === 'validado' || st === 'encerrado', 'Marque Compras, Operações e Manutenção e trate todas as não conformidades')}
+      ${bt('encerrado','Encerrar auditoria', st === 'validado' ? 'pri' : '', st !== 'validado' || abertas > 0, 'Valide e resolva todas as ocorrências')}
     </div>
-    <p class="note">${!areasOk ? 'Para validar, marque Compras, Operações e Manutenção. ' : ''}${abertas ? `Para encerrar, resolva as ${abertas} ocorrência(s) em aberto.` : ''}</p>
+    <p class="note">${!areasOk ? 'Para validar, marque Compras, Operações e Manutenção. ' : ''}${ncPend ? `<b style="color:var(--bad)">${ncPend} não conformidade(s) sem ação nem justificativa</b> (veja a seção Não conformidades). ` : ''}${abertas ? `Para encerrar, conclua as ${abertas} ação(ões) em aberto na Central de Pendências.` : ''}</p>
     ${(w.hist||[]).length ? `<div class="hist">${histHtml(w)}</div>` : ''}
   </section>`;
 }
@@ -775,10 +777,11 @@ async function setStatus(s){
   const w = S.rep.w; S.rep.err = null;
   if(s === 'devolvida' && !(w.obs||'').trim()){ S.rep.err = 'Escreva na observação o que o auditor precisa corrigir antes de devolver.'; renderReport(); return; }
   const now = Date.now();
+  const antes = clone(w);
   w.status = s; w.em = now; w.hist = w.hist || []; w.hist.push({s, em:now, por:S.me.id, obs: s === 'devolvida' ? w.obs : ''});
   clearTimeout(S.valT);
-  try{ await S.db.doc('validacoes/' + S.rep.id).set(clone(w)); toast('Status: ' + ST[s][0] + '.'); }
-  catch(err){ toast(err && err.code === 'invalid_argument' ? 'Só a administração do PEX pode mudar o status.' : 'Não foi possível salvar. Tente de novo.'); }
+  try{ await S.db.doc('validacoes/' + S.rep.id).set(clone(w)); toast('Status: ' + ST[s][0] + '.', 'ok'); }
+  catch(err){ S.rep.w = antes; const m = String((err && err.message) || ''); S.rep.err = /conformidade|ação\(ões\)/.test(m) ? m : null; toast(S.rep.err || (err && err.code === 'invalid_argument' ? 'Só a administração do PEX pode mudar o status.' : 'Não foi possível salvar. Tente de novo.'), 'bad'); }
   renderReport();
 }
 
@@ -1363,7 +1366,7 @@ function acFiltradas(){
 function acOrdenar(l){
   const {col, dir} = S.psort; const crit = {critica:0, alta:1, media:2, baixa:3}; const st = {reaberta:0, aberta:1, em_andamento:2, aguardando_validacao:3, concluida:4};
   const val = a => col === 'numero' ? a.numero : col === 'parque' ? evName(a.evento) : col === 'crit' ? crit[a.criticidade] : col === 'dep' ? (DEPS[a.departamento] || 'zz') : col === 'resp' ? (a.responsavel || 'zz') : col === 'prazo' ? (a.prazo || '9999') : col === 'status' ? st[a.status] : col === 'criada' ? a.criado_em : a.problema;
-  return l.sort((x, y) => { const a = val(x), b = val(y); const r = typeof a === 'number' ? a - b : String(a).localeCompare(String(b), 'pt-BR', {numeric: true}); return (r || x.numero - y.numero) * dir; });
+  return l.sort((x, y) => { if(col === 'crit'){ const fx = x.status === 'concluida' ? 1 : 0, fy = y.status === 'concluida' ? 1 : 0; if(fx !== fy) return fx - fy; } const a = val(x), b = val(y); const r = typeof a === 'number' ? a - b : String(a).localeCompare(String(b), 'pt-BR', {numeric: true}); return (r * dir) || String(x.prazo || '9999').localeCompare(String(y.prazo || '9999')) || x.numero - y.numero; });
 }
 
 function renderPendencias(){
@@ -1553,7 +1556,7 @@ function novaAcaoSheet(pre){
 }
 function preDaOcorrencia(vid, ocId){
   const v = S.visitas.get(vid); if(!v) return null; const o = (v.ocorrencias || []).find(x => x.id === ocId); if(!o) return null;
-  return {evento: v.evento, visita: vid, ocorrencia: o.id, item: o.item || null, origem: 'ocorrencia', problema: o.desc || '', local: o.local || '', eixo: o.eixo || null, criticidade: o.crit || 'media', acao: o.acao || '', fotos: o.fotos || [], identificado_em: v.enviadoEm ? new Date(v.enviadoEm).toISOString().slice(0, 10) : hojeISO()};
+  return {evento: v.evento, visita: vid, ocorrencia: o.id, item: o.item || (o.ext ? 'ext:' + o.ext : null), origem: 'ocorrencia', problema: o.desc || '', local: o.local || '', eixo: o.eixo || null, criticidade: o.crit || 'media', acao: o.acao || '', fotos: o.fotos || [], identificado_em: v.enviadoEm ? new Date(v.enviadoEm).toISOString().slice(0, 10) : hojeISO()};
 }
 async function criarAcoesDaVisita(vid){
   const v = S.visitas.get(vid); const sem = (v.ocorrencias || []).filter(o => !acaoDaOc(vid, o.id));
@@ -1642,6 +1645,65 @@ function acaoBox(v, o){
     <div><button class="btn sm" type="button" data-act="ac-abrir" data-id="${esc(a.id)}">Abrir ação</button></div></div>`;
   return `<div class="row"><button class="btn sm pri" type="button" data-act="ac-da-oc" data-v="${esc(v._id)}" data-o="${esc(o.id)}">${ic('plus','sm')}Criar ação corretiva</button><span class="note" style="margin:0">Vai para a Central de Pendências com o parque, a auditoria e as fotos já vinculados.</span></div>`;
 }
+
+/* ===================== Fase 3 · Não conformidades sempre acompanhadas ===================== */
+// Mesma regra da função pex_nc_pendentes do banco.
+function ncDaVisita(v){
+  const out = [];
+  STEPS.forEach(s => (s.grupos || []).forEach(g => g.itens.forEach(i => {
+    const a = (v.itens || {})[i.id];
+    if(a && a.r === 'nc' && (!i.id.startsWith('if-') || v.temInflaveis)) out.push({chave: 'item:' + i.id, item: i.id, titulo: i.t, etapa: s.t, obs: a.obs || '', fotos: a.fotos || [], eixo: s.eixo || 'organizacao', crit: s.k === 'estrutura' ? 'alta' : 'media'});
+  })));
+  const ex = v.extras && typeof v.extras === 'object' && !Array.isArray(v.extras) ? v.extras : {};
+  Object.entries(ex).forEach(([k, arr]) => (Array.isArray(arr) ? arr : []).forEach(x => {
+    if(x.r === 'nc'){ const s = STEPS.find(z => z.k === k) || {}; out.push({chave: 'ext:' + x.id, item: 'ext:' + x.id, titulo: 'Outro local: ' + (x.local || 'sem nome'), etapa: s.t || '', obs: x.obs || '', fotos: x.fotos || [], eixo: s.eixo || 'organizacao', crit: k === 'estrutura' ? 'alta' : 'media'}); }
+  }));
+  (v.ocorrencias || []).forEach(o => { if(!o.item && !o.ext) out.push({chave: 'oc:' + o.id, oc: o.id, titulo: o.desc || 'Ocorrência sem descrição', etapa: 'Ocorrências', obs: o.local || '', fotos: o.fotos || [], eixo: o.eixo, crit: o.crit || 'media'}); });
+  return out;
+}
+function coberturaNc(v, n){
+  for(const a of S.acoes.values()){ if(a.visita === v._id && ((n.item && a.item === n.item) || (n.oc && a.ocorrencia === n.oc))) return {acao: a}; }
+  const w = S.rep && S.rep.id === v._id ? S.rep.w : (S.val.get(v._id) || {});
+  const j = (w.justificativas || {})[n.chave]; if(j && (j.texto || '').trim()) return {just: j};
+  return null;
+}
+function ncPendentes(v){ return ncDaVisita(v).filter(n => !coberturaNc(v, n)); }
+function preDaNc(vid, chave){
+  const v = S.visitas.get(vid); if(!v) return null; const n = ncDaVisita(v).find(x => x.chave === chave); if(!n) return null;
+  const oc = (v.ocorrencias || []).find(o => (n.item && (o.item === n.item || (o.ext && 'ext:' + o.ext === n.item))) || (n.oc && o.id === n.oc));
+  if(oc) return preDaOcorrencia(vid, oc.id);
+  return {evento: v.evento, visita: vid, ocorrencia: null, item: n.item || null, origem: 'nao_conformidade', problema: n.titulo + (n.obs ? ': ' + n.obs : ''), local: '', eixo: n.eixo || null, criticidade: n.crit, acao: '', fotos: n.fotos, identificado_em: v.enviadoEm ? new Date(v.enviadoEm).toISOString().slice(0, 10) : hojeISO()};
+}
+function ncSecao(v){
+  const lista = ncDaVisita(v); if(!lista.length) return '';
+  const cob = lista.map(n => ({n, c: coberturaNc(v, n)})); const ok = cob.filter(x => x.c).length;
+  return `<section class="card rep-sec" id="nc-sec"><div class="card-h"><h2>Não conformidades</h2><span class="row" style="gap:8px">${pill(`${ok} de ${lista.length} acompanhadas`, ok === lista.length ? 'ok' : 'warn')}</span></div>
+    <p class="note" style="margin:-6px 0 6px">Cada não conformidade precisa de uma ação corretiva na Central ou de uma justificativa da administração. Sem isso a auditoria não pode ser validada.</p>
+    ${cob.map(({n, c}) => `<div class="rep-it" id="nc-${esc(n.chave.replace(/[^a-z0-9]/gi, '-'))}">
+      <span><b>${esc(n.titulo)}</b><span class="sub muted" style="display:block;font-size:12.5px">${esc(n.etapa)}${n.obs ? ' · ' + esc(n.obs) : ''}</span></span>
+      <span>${c && c.acao ? acPill(c.acao) : c && c.just ? pill('Justificada', 'info') : pill('Pendente', 'bad')}</span>
+      <div class="o" style="display:grid;gap:8px">
+        ${c && c.acao ? `<div class="row"><span class="mono">${acCod(c.acao)}</span><span>${esc(c.acao.responsavel || 'Sem responsável')} · ${c.acao.prazo ? 'prazo ' + fiso(c.acao.prazo) : 'sem prazo'}</span><button class="btn sm" type="button" data-act="ac-abrir" data-id="${esc(c.acao.id)}">Abrir ação</button></div>`
+        : c && c.just ? `<div>Justificativa: “${esc(c.just.texto)}” <span class="muted">· ${esc(who(c.just.por))}, ${c.just.em ? fdt(c.just.em) : ''}</span> <button class="link" type="button" data-act="nc-just-rm" data-k="${esc(n.chave)}">Remover</button></div>`
+        : S.ncJust === n.chave ? `<div class="stack tight"><textarea id="nc-just-txt" placeholder="Por que esta não conformidade não precisa de ação corretiva?">${esc(S.ncJustTxt || '')}</textarea><div class="row" style="justify-content:flex-end"><button class="btn sm" type="button" data-act="nc-just-cancel">Cancelar</button><button class="btn sm pri" type="button" data-act="nc-just-ok" data-k="${esc(n.chave)}">Registrar justificativa</button></div></div>`
+        : `<div class="row"><button class="btn sm pri" type="button" data-act="nc-acao" data-v="${esc(v._id)}" data-k="${esc(n.chave)}">${ic('plus','sm')}Criar ação corretiva</button><button class="btn sm" type="button" data-act="nc-just" data-k="${esc(n.chave)}">Justificar sem ação</button></div>`}
+      </div></div>`).join('')}
+  </section>`;
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-act]'); if(!b) return; const a = b.dataset.act;
+  if(a === 'nc-acao'){ const pre = preDaNc(b.dataset.v, b.dataset.k); if(pre) novaAcaoSheet(pre); }
+  else if(a === 'nc-just'){ S.ncJust = b.dataset.k; S.ncJustTxt = ''; renderReport(); const t = $('#nc-just-txt'); if(t) t.focus(); }
+  else if(a === 'nc-just-cancel'){ S.ncJust = null; renderReport(); }
+  else if(a === 'nc-just-ok'){
+    const txt = (S.ncJustTxt || '').trim(); if(txt.length < 5){ toast('Escreva a justificativa (pelo menos algumas palavras).', 'bad'); return; }
+    const w = S.rep.w; w.justificativas = w.justificativas || {}; w.justificativas[b.dataset.k] = {texto: txt, por: S.me.id, em: Date.now()};
+    w.hist = w.hist || []; w.hist.push({s: 'justificativa', em: Date.now(), por: S.me.id, obs: b.dataset.k + ': ' + txt});
+    S.ncJust = null; saveVal(); renderReport(); toast('Justificativa registrada.', 'ok');
+  }
+  else if(a === 'nc-just-rm'){ const w = S.rep.w; if(w.justificativas) delete w.justificativas[b.dataset.k]; saveVal(); renderReport(); }
+});
+document.addEventListener('input', e => { if(e.target.id === 'nc-just-txt') S.ncJustTxt = e.target.value; });
 
 init();
 </script>
