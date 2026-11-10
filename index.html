@@ -225,6 +225,10 @@ details.fold summary::-webkit-details-marker{display:none}
 details.fold summary .ic:last-child{margin-left:auto;transition:transform .2s;color:var(--muted)}
 details.fold[open] summary .ic:last-child{transform:rotate(180deg)}
 details.fold .fold-b{padding:0 18px 18px}
+.rev summary{padding:14px 16px} .rev .fold-b{padding:0 16px 14px}
+.rev .num{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:13px;background:var(--ok-bg);color:var(--ok);flex:none}
+.rev.pend .num{background:var(--bad-bg);color:var(--bad)}
+.rev summary small{display:block;font-weight:500;color:var(--muted);font-size:12.5px;margin-top:1px}
 
 /* ---------- editor da visita ---------- */
 .ed-top{display:flex;gap:12px;align-items:flex-start}
@@ -281,7 +285,7 @@ details.fold .fold-b{padding:0 18px 18px}
 .skus{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px}
 .sku{border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:10px;background:var(--surface)}
 .sku-h{display:flex;gap:8px;align-items:center} .sku-h input{font-weight:700}
-.sku-n{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.sku-n{display:grid;grid-template-columns:repeat(3,1fr);gap:8px} .sku-n.two{grid-template-columns:repeat(2,1fr)}
 .sku-n input{font-size:20px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;padding-left:6px;padding-right:6px}
 .sku-r{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;color:var(--muted);background:var(--surface-2);border-radius:10px;padding:9px 12px;font-weight:600}
 .sku-r b{font-size:16px;color:var(--ink)}
@@ -317,7 +321,7 @@ details.fold .fold-b{padding:0 18px 18px}
 .banner.ok{background:var(--ok-bg);border-color:transparent;color:var(--ink)} .banner.ok>.ic{color:var(--ok)}
 
 /* ---------- toast, foto ampliada, painel deslizante ---------- */
-.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--appbar) + var(--top) + 10px);background:var(--ink);color:var(--surface);padding:11px 18px;border-radius:12px;font-size:14px;font-weight:600;z-index:70;max-width:min(92vw,480px);text-align:center;box-shadow:var(--sh-2)}
+.toast{pointer-events:none;position:fixed;left:50%;transform:translateX(-50%);top:calc(var(--appbar) + var(--top) + 10px);background:var(--ink);color:var(--surface);padding:11px 18px;border-radius:12px;font-size:14px;font-weight:600;z-index:70;max-width:min(92vw,480px);text-align:center;box-shadow:var(--sh-2)}
 
 .lb{position:fixed;inset:0;background:rgba(4,8,7,.92);z-index:80;display:flex;align-items:center;justify-content:center;padding:calc(56px + var(--top)) 12px calc(16px + var(--bot))}
 .lb img{max-width:100%;max-height:100%;border-radius:10px}
@@ -436,7 +440,7 @@ dialog.sheet::backdrop{background:rgba(4,8,7,.45)}
 /* ===================== Protocolo (manual PEX v1.0) ===================== */
 const EIXOS = [['atendimento','Atendimento'],['organizacao','Organização'],['auditoria','Auditoria'],['estrutura','Estrutura']];
 const ESCALA = ['Crítico','Muito baixo','Abaixo','Adequado','Muito bom','Excelente'];
-const SKUS = ['Slime','Eggsaur','Balão metálico','Chaveiro','Livro'];
+const SKUS = ['Balão','Slime','Livro','Haste','Chaveiro','Ovo de dinossauro','Água'];
 const ST = {rascunho:['Em preenchimento',''],enviado:['Aguardando validação','info'],em_validacao:['Em validação','info'],acao_corretiva:['Ação corretiva','warn'],devolvida:['Devolvida ao auditor','warn'],validado:['Validado','ok'],encerrado:['Encerrado','ok']};
 const CRIT = {critica:['Crítica','bad'],alta:['Alta','warn'],media:['Média',''],baixa:['Baixa','']};
 const ACAO = {aberta:['Aberta','bad'],andamento:['Em andamento','warn'],resolvida:['Resolvida','ok']};
@@ -460,20 +464,22 @@ const STEPS = [
       it('cn-regra','Pedido fora da regra','Peça educadamente uma exceção comum, sem insistir')]}]},
   {k:'identificacao', t:'Identificação', special:'identificacao'},
   {k:'exposicao', t:'Exposição',
-   intro:'Fotografe a vitrine, os expositores e a organização dos produtos.',
+   intro:'Fotografe a vitrine e todos os outros locais onde há produtos expostos.', extras:true,
    grupos:[{t:'Vitrine e exposição', itens:[
       it('ex-baloes','Balões','Presença, variedade, integridade, quantidade e disposição'),
       it('ex-livros','Livros','Organização, conservação, visibilidade e acesso'),
       it('ex-chaveiros','Chaveiros','Estado do expositor, quantidade, modelos e espaços vazios'),
       it('ex-slimes','Slimes e demais produtos','Identificação, apresentação, conservação e armazenamento')]}],
-   fotos:[['f-vitrine','Vitrine — foto frontal ampla'],['f-pdv','Pontos de venda — fotos aproximadas']]},
+   fotos:[['f-vitrine','Vitrine — foto frontal ampla'],['f-pdv','Outros locais com produtos expostos']]},
   {k:'estoque', t:'Estoque', eixo:'auditoria', special:'estoque',
-   intro:'Conte fisicamente cada SKU na vitrine e na reserva. O teórico é o saldo do sistema; a divergência é calculada sozinha.',
+   intro:'Conte fisicamente cada produto, na vitrine e na reserva, e declare o que tem na loja. A comparação com o saldo do sistema é feita pela administração.',
+   notaDica:'Avalie a contagem, a organização e a conservação do estoque. A conferência com o sistema é feita pela administração.',
    grupos:[{t:'Armazenamento', itens:[
       it('es-separacao','Separação por categoria/SKU','Identificação e acesso sem movimentação insegura'),
       it('es-locais','Locais de contagem','Vitrine, reserva e locais autorizados, sem dupla contagem'),
-      it('es-avarias','Danificados, vencidos ou sem identificação','Registre e fotografe cada caso')]}],
-   fotos:[['f-armazenagem','Local de armazenagem']]},
+      it('es-avarias','Danificados, vencidos ou sem identificação','Registre e fotografe cada caso'),
+      it('es-padrao','Padrão estético e organização','Produtos guardados com cuidado, limpos, empilhados com segurança e fáceis de achar')]}],
+   fotos:[['f-armazenagem','Onde os produtos estão armazenados — visão geral'],['f-armazenagem-det','Como estão armazenados — detalhe das prateleiras e caixas']]},
   {k:'limpeza', t:'Limpeza', eixo:'organizacao',
    intro:'Registre a condição real no momento da visita. Sujeira conta em Organização; desgaste com risco vira ocorrência em Estrutura.',
    grupos:[{t:'Checklist de limpeza', itens:[
@@ -484,15 +490,15 @@ const STEPS = [
       it('lp-areas','Áreas internas e atrações','Resíduos, sujeira acumulada e materiais fora do lugar'),
       it('lp-apoio','Estoque e áreas de apoio','Circulação livre e materiais empilhados com segurança')]}],
    fotos:[['f-frente','Frente do evento'],['f-recepcao','Recepção'],['f-piso','Piso / carpete'],['f-internas','Áreas internas']],
-   notaDica:'A nota de Organização cobre limpeza, vitrine, apresentação e armazenagem.'},
+   notaDica:'A nota de Organização cobre limpeza, vitrine, apresentação e armazenagem.', extras:true},
   {k:'estrutura', t:'Estrutura', eixo:'estrutura',
-   intro:'Inspeção visual, sem desmontar nada. A aprovação visual não substitui inspeção técnica nem manutenção preventiva.',
+   intro:'Inspeção visual, sem desmontar nada. A aprovação visual não substitui inspeção técnica nem manutenção preventiva.', extras:true,
    alerta:'Perigo imediato (fio energizado acessível, estrutura instável, proteção rompida em área de queda, inflável perdendo sustentação): peça ao responsável para suspender o uso da área, acione a equipe técnica e registre ocorrência crítica. Não faça reparos nem testes elétricos.',
    grupos:[
     {t:'Frente, mobiliário e acessos', itens:[
       it('et-letreiro','Letreiro e fachada','Fixação, conservação, iluminação e acabamento'),
       it('et-recepcao','Recepção, baús e cadeiras','Estabilidade, integridade, quinas e peças danificadas'),
-      it('et-cercados','Cercados, portões e fechos','Alinhamento, fixação, abertura e fechamento seguros'),
+      it('et-cercados','Cercados do parque, portões e fechos','Bem fixados, alinhados, sem partes soltas; abertura e fechamento seguros'),
       it('et-emendas','Emendas e pontos de contato','Folgas, bordas, saliências e proteções ausentes')]},
     {t:'Proteções e atrações', itens:[
       it('et-redes','Redes de proteção','Tensão, fixação, rasgos, costuras, remendos e aberturas'),
@@ -500,15 +506,21 @@ const STEPS = [
       it('et-escorregadores','Escorregadores e tobogãs','Alinhamento, firmeza, superfícies e fixações expostas'),
       it('et-torres','Torres','Montagem, proteções, redes e tensão aparente dos elásticos'),
       it('et-tuneis','Túneis de fitas','Costuras, rasgos e pontos de desprendimento'),
-      it('et-piscina','Piscina de bolinhas','Nível, limpeza, bolinhas quebradas e dispersão')]},
+      it('et-piscina','Piscina de bolinhas','Nível, limpeza, bolinhas quebradas e dispersão'),
+      it('et-tatames','Tatames da piscina de bolinhas','Bem fixados, sem frestas, rasgos ou bordas soltas'),
+      it('et-fixacao','Fixação dos brinquedos','Brinquedos, painéis e estruturas bem presos ao piso ou à parede, sem balanço'),
+      it('et-espumas','Espumas e protetores de quina','Presentes, inteiros e bem presos')]},
     {t:'Energia e tecnologia', itens:[
       it('et-eletrica','Instalações elétricas','Cabos aparentes, isolação, conexões improvisadas, tomadas e umidade'),
       it('et-quadro','Quadro de distribuição','Fechado, identificado, protegido e sem sinais de aquecimento'),
-      it('et-pc','Computadores e sistema','Inicialização, sistema, monitor, teclado, mouse e conexão')]},
+      it('et-pc','Computadores e sistema','Inicialização, sistema, monitor, teclado, mouse e conexão'),
+      it('et-iluminacao','Iluminação','Lâmpadas funcionando, luminárias presas e sem fios soltos')]},
+    {t:'Segurança', itens:[
+      it('et-extintor','Extintor e saída de emergência','Extintor dentro da validade e acessível; saída sinalizada e desobstruída')]},
     {t:'Infláveis', inflaveis:true, itens:[
       it('if-superficie','Superfície','Rasgos, furos, costuras abertas e perda aparente de pressão'),
       it('if-tubos','Tubos e saídas de ar','Conexões firmes; saídas não usadas fechadas'),
-      it('if-sopradores','Sopradores e motores','Funcionamento, ruído, aquecimento e ventilação'),
+      it('if-sopradores','Motores dos infláveis','Funcionando, sem ruído estranho, aquecimento ou fios expostos; ventilação livre'),
       it('if-caixas','Caixas de proteção','Integridade, fixação, ventilação e acesso restrito'),
       it('if-ancoragem','Ancoragens e afastamentos','Conforme manual do fabricante e capacidade de uso')]}]},
   {k:'ocorrencias', t:'Ocorrências', special:'ocorrencias'},
@@ -651,7 +663,7 @@ function renderPainel(){
   const vis = rows.filter(r => (!q || (r.e.nome + ' ' + (r.e.franquia||'')).toLowerCase().includes(q)) && (S.filt.fr === 'all' || (S.filt.fr === 'none' ? !r.e.franquia : r.e.franquia === S.filt.fr)))
     .sort((a,b) => ordem[a.sit] - ordem[b.sit] || a.e.nome.localeCompare(b.e.nome,'pt-BR'));
   const eixoM = EIXOS.map(([k,t]) => { const ns = aud.map(r => notaN(r.v,k)).filter(n => typeof n === 'number'); return [t, ns.length ? Math.round(ns.reduce((a,b)=>a+b,0)/ns.length*10)/10 : null]; });
-  const div = new Map(); aud.forEach(r => (r.v.estoque||[]).forEach(s => { if(!s.sku || s.teorico === '' || s.teorico == null) return; const f = (+s.exposto||0) + (+s.reserva||0); div.set(s.sku, (div.get(s.sku)||0) + f - (+s.teorico||0)); }));
+  const div = new Map(); aud.forEach(r => (r.v.estoque||[]).forEach((s, si) => { const teo = teoricoDe(r.v, S.val.get(r.v._id), si); if(!s.sku || teo === '' || teo == null) return; const f = (+s.exposto||0) + (+s.reserva||0); div.set(s.sku, (div.get(s.sku)||0) + f - (+teo||0)); }));
   const divRows = [...div.entries()].sort((a,b) => a[1]-b[1]);
   const maxD = Math.max(5, ...divRows.map(d => Math.abs(d[1])));
   const admin = S.me.admin;
@@ -693,10 +705,10 @@ function renderPainel(){
         <div class="card-h"><h2>Média por eixo</h2><span class="note">linha = 3, Adequado</span></div>
         ${idxs.length ? `<div class="bars">${eixoM.map(([t,m]) => `<div class="bar"><span>${t}</span><div class="tr"><i class="${m != null && m < 3 ? 'low' : ''}" style="width:${m == null ? 0 : m/5*100}%"></i><span class="ref" style="left:60%"></span></div><b>${nf1(m)}</b></div>`).join('')}</div>` : `<div class="empty">${ic('painel')}As médias aparecem depois da primeira visita enviada.</div>`}
       </section>
-      <section class="card">
+      ${admin ? `<section class="card">
         <div class="card-h"><h2>Divergência de estoque</h2><span class="note">físico − teórico</span></div>
         ${divRows.length ? `<div class="bars">${divRows.map(([s,d]) => `<div class="bar dbar"><span>${esc(s)}</span><div class="tr"><span class="zero"></span><i class="${d < 0 ? 'neg' : ''}" style="left:${d < 0 ? 50 - Math.abs(d)/maxD*50 : 50}%;width:${Math.abs(d)/maxD*50}%"></i></div><b>${d > 0 ? '+' : ''}${nfi(d)}</b></div>`).join('')}</div>` : `<div class="empty">${ic('caixa')}Nenhuma contagem enviada ainda.</div>`}
-      </section>
+      </section>` : ''}
     </div>` : ''}
   </div>`;
 }
@@ -741,7 +753,7 @@ async function novaVisita(){
   const ref = S.db.collection('visitas').doc();
   const now = Date.now(); const d = new Date(now);
   const data = {evento:ev, auditor:S.me.id, criadoEm:now, codigo:`PEX-${String(d.getFullYear()).slice(2)}${p2(d.getMonth()+1)}${p2(d.getDate())}-${ref.id.slice(-4).toUpperCase()}`,
-    temInflaveis: e.inflaveis === true, itens:{}, notas:{}, fotosObr:{}, estoque: SKUS.map(s => ({sku:s, exposto:'', reserva:'', teorico:'', just:'', fotos:[]})),
+    temInflaveis: e.inflaveis === true, itens:{}, notas:{}, fotosObr:{}, estoque: SKUS.map(s => ({sku:s, fixo:true, exposto:'', reserva:'', just:'', fotos:[]})), atendentes:[''], extras:{},
     ocorrencias:[], lider:'', identificadoEm:null, enviadoEm:null};
   $('#btn-novo').disabled = true;
   try{ await ref.set(data); openEditor(ref.id, data); }
@@ -775,7 +787,10 @@ function stepDone(d, s){
   const items = (s.grupos||[]).flatMap(g => g.itens).filter(i => aplicavel(d, i.id));
   const ok = items.every(i => d.itens[i.id] && d.itens[i.id].r);
   const nota = !s.eixo || (d.notas[s.eixo] && d.notas[s.eixo].n != null);
-  const est = s.special !== 'estoque' || d.estoque.some(r => r.sku && r.teorico !== '' && (r.exposto !== '' || r.reserva !== ''));
+  const est = s.special !== 'estoque' || estoqueOk(d);
+  if(s.fotos && !s.fotos.every(([id]) => (d.fotosObr[id]||[]).length)) return false;
+  if(s.k === 'anonimo' && !atendentesOk(d)) return false;
+  if(s.extras && !extrasOk(d, s.k)) return false;
   return ok && nota && est;
 }
 
@@ -812,13 +827,15 @@ function stepBody(s, d){
   if(s.special === 'identificacao') return h + identBody(d);
   if(s.special === 'ocorrencias') return h + ocBody(d);
   if(s.special === 'envio') return h + envioBody(d);
+  if(s.k === 'anonimo') h += atendentesBody(d);
+  if(s.special === 'estoque') h += estoqueBody(d);
   if(s.k === 'estrutura') h += `<label class="chk card" style="padding:14px"><input type="checkbox" id="b-temInflaveis" data-b="temInflaveis" data-bool${d.temInflaveis ? ' checked' : ''} data-rerender><span><b>Este evento tem infláveis</b><br><span class="note">Inclui o módulo de infláveis na inspeção.</span></span></label>`;
   (s.grupos||[]).forEach(g => {
     if(g.inflaveis && !d.temInflaveis) return;
     h += `<div><div class="grp-t">${g.t}</div>${g.itens.map(i => itemBody(i, d)).join('')}</div>`;
   });
-  if(s.special === 'estoque') h += estoqueBody(d);
   if(s.fotos) h += `<div><div class="grp-t">Fotos obrigatórias</div><div class="req">${s.fotos.map(([id,t]) => { const fs = (d.fotosObr[id]||[]); return `<div class="req-i${fs.length ? ' done' : ''}"><span><span class="dot">${ic(fs.length ? 'check' : 'camera', 'sm')}</span>${t}</span>${photos('obr:' + id, fs, true)}</div>`; }).join('')}</div></div>`;
+  if(s.extras) h += extrasBody(s, d);
   if(s.eixo) h += notaBody(s, d);
   return h;
 }
@@ -864,41 +881,39 @@ function identBody(d){
 }
 
 function estoqueBody(d){
-  return `<div><div class="grp-t">Contagem por SKU</div>
-    <div class="skus">${d.estoque.map((r,i) => { const f = (+r.exposto||0) + (+r.reserva||0); const has = r.teorico !== '' && r.teorico != null; const dv = has ? f - (+r.teorico||0) : null; return `<div class="sku">
-      <div class="sku-h"><input type="text" id="b-est-${i}-sku" data-b="estoque.${i}.sku" value="${esc(r.sku)}" placeholder="Nome do SKU" aria-label="SKU"><button type="button" class="btn sm icon" data-act="est-rm" data-i="${i}" aria-label="Remover ${esc(r.sku || 'SKU')}">${ic('lixo','sm')}</button></div>
-      <div class="sku-n">
+  return `<div><div class="grp-t">Contagem do estoque</div>
+    <p class="note" style="margin:-4px 0 10px">Conte o que está exposto e o que está na reserva, sem contar nada duas vezes. Se o produto não existir na loja, coloque 0.</p>
+    <div class="skus">${d.estoque.map((r,i) => { const f = (+r.exposto||0) + (+r.reserva||0); const fixo = r.fixo || (!r.outro && SKUS.includes(r.sku)); return `<div class="sku">
+      <div class="sku-h">${fixo ? `<b style="font-size:16px;flex:1">${esc(r.sku)}</b>` : `<input type="text" id="b-est-${i}-sku" data-b="estoque.${i}.sku" value="${esc(r.sku)}" placeholder="Qual produto?" aria-label="Nome do produto"><button type="button" class="btn sm icon" data-act="est-rm" data-i="${i}" aria-label="Remover ${esc(r.sku || 'produto')}">${ic('lixo','sm')}</button>`}</div>
+      <div class="sku-n two">
         <label class="f">Exposto<input type="number" inputmode="numeric" min="0" id="b-est-${i}-exp" data-b="estoque.${i}.exposto" data-calc value="${esc(r.exposto)}"></label>
         <label class="f">Reserva<input type="number" inputmode="numeric" min="0" id="b-est-${i}-res" data-b="estoque.${i}.reserva" data-calc value="${esc(r.reserva)}"></label>
-        <label class="f">Teórico<input type="number" inputmode="numeric" id="b-est-${i}-teo" data-b="estoque.${i}.teorico" data-calc value="${esc(r.teorico)}"></label>
       </div>
-      <div class="sku-r"><span>Físico <b class="mono" id="est-f-${i}">${r.exposto === '' && r.reserva === '' ? '—' : f}</b></span><span>Divergência <b class="mono" id="est-d-${i}" style="color:${dv < 0 ? 'var(--bad)' : dv > 0 ? 'var(--ok)' : 'inherit'}">${dv == null ? '—' : (dv > 0 ? '+' : '') + dv}</b></span></div>
-      <input type="text" id="b-est-${i}-just" data-b="estoque.${i}.just" value="${esc(r.just||'')}" placeholder="Justificativa, se houver divergência" aria-label="Justificativa de ${esc(r.sku || 'SKU')}">
+      <div class="sku-r"><span>Total na loja</span><b class="mono" id="est-f-${i}">${r.exposto === '' && r.reserva === '' ? '—' : f}</b></div>
+      <input type="text" id="b-est-${i}-just" data-b="estoque.${i}.just" value="${esc(r.just||'')}" placeholder="Observação (avariado, vencido, sem etiqueta…)" aria-label="Observação sobre ${esc(r.sku || 'produto')}">
       ${photos('est:' + i, r.fotos||[], true)}</div>`; }).join('')}</div>
-    <div style="margin-top:10px"><button class="btn sm" type="button" data-act="est-add" id="btn-est-add">${ic('plus','sm')}Adicionar SKU</button></div>
-    <p class="note">Divergência = físico − teórico. O auditor não altera saldos: Compras concilia com vendas, entradas, transferências e baixas.</p></div>`;
+    <div style="margin-top:10px"><button class="btn block" type="button" data-act="est-add" id="btn-est-add">${ic('plus')}Outros: produto que não está na lista</button></div></div>`;
 }
 function updEst(i){
-  const r = S.edit.d.estoque[i]; const f = (+r.exposto||0) + (+r.reserva||0); const has = r.teorico !== '';
-  const dv = has ? f - (+r.teorico||0) : null;
-  const ef = $('#est-f-' + i), ed = $('#est-d-' + i);
-  if(ef) ef.textContent = r.exposto === '' && r.reserva === '' ? '—' : f;
-  if(ed){ ed.textContent = dv == null ? '—' : (dv > 0 ? '+' : '') + dv; ed.style.color = dv < 0 ? 'var(--bad)' : dv > 0 ? 'var(--ok)' : 'inherit'; }
+  const r = S.edit.d.estoque[i]; const f = (+r.exposto||0) + (+r.reserva||0);
+  const ef = $('#est-f-' + i); if(ef) ef.textContent = r.exposto === '' && r.reserva === '' ? '—' : f;
 }
 
 function ocBody(d){
   const ocs = d.ocorrencias || [];
   return `<p class="note">Cada achado com local exato, descrição objetiva, fotos, criticidade e ação proposta. Registre fatos; não atribua intenção.</p>
+  <datalist id="dl-atend">${(d.atendentes||[]).filter(Boolean).map(n => `<option value="${esc(n)}">`).join('')}</datalist>
   ${ocs.map((o,i) => `<div class="oc ${esc(o.crit)}" id="oc-${i}">
     <div class="row between"><span class="row" style="gap:8px"><span class="mono">${esc(d.codigo)}-O${i+1}</span>${pill(CRIT[o.crit][0], CRIT[o.crit][1])}</span><button class="btn sm danger" type="button" data-act="oc-rm" data-i="${i}" id="oc-rm-${i}">Remover</button></div>
     ${o.item && ITEM_INDEX[o.item] ? `<div class="note" style="margin:0">Item: <b>${esc(ITEM_INDEX[o.item].t)}</b></div>` : ''}
     <div class="fgrid">
-      <label class="f">Eixo<select id="b-oc-${i}-eixo" data-b="ocorrencias.${i}.eixo">${EIXOS.map(([k,t]) => `<option value="${k}"${o.eixo === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
-      <label class="f">Criticidade<select id="b-oc-${i}-crit" data-b="ocorrencias.${i}.crit" data-rerender>${Object.entries(CRIT).map(([k,[t]]) => `<option value="${k}"${o.crit === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
+      <label class="f">Categoria do problema<select id="b-oc-${i}-eixo" data-b="ocorrencias.${i}.eixo">${EIXOS.map(([k,t]) => `<option value="${k}"${o.eixo === k ? ' selected' : ''}>${CATEG[k]}</option>`).join('')}</select></label>
+      <label class="f">Gravidade<select id="b-oc-${i}-crit" data-b="ocorrencias.${i}.crit" data-rerender>${Object.entries(CRIT).map(([k,[t]]) => `<option value="${k}"${o.crit === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
     </div>
     <label class="f">Local exato<input type="text" id="b-oc-${i}-local" data-b="ocorrencias.${i}.local" value="${esc(o.local||'')}" placeholder="Ex.: torre 2, lado do escorregador"></label>
     <label class="f">Descrição objetiva<textarea id="b-oc-${i}-desc" data-b="ocorrencias.${i}.desc" placeholder="O que foi observado">${esc(o.desc||'')}</textarea></label>
     <label class="f">Ação proposta<input type="text" id="b-oc-${i}-acao" data-b="ocorrencias.${i}.acao" value="${esc(o.acao||'')}" placeholder="O que precisa ser feito"></label>
+    <label class="f">Colaboradora envolvida (nome completo, se houver)<input type="text" id="b-oc-${i}-colab" data-b="ocorrencias.${i}.colab" value="${esc(o.colab||'')}" list="dl-atend" placeholder="Ex.: Maria Aparecida da Silva"></label>
     ${o.crit === 'critica' ? `<label class="chk banner bad"><input type="checkbox" id="b-oc-${i}-com" data-b="ocorrencias.${i}.comunicado" data-bool${o.comunicado ? ' checked' : ''}><span>Responsável comunicado na hora e uso da área suspenso; equipe técnica acionada</span></label>` : ''}
     ${photos('oc:' + i, o.fotos||[], true)}
   </div>`).join('') || `<div class="empty">${ic('flag')}Nenhuma ocorrência registrada nesta visita.<br>Itens marcados como não conforme podem virar ocorrência.</div>`}
@@ -914,7 +929,8 @@ function aceite(d){
   STEPS.forEach(s => (s.grupos||[]).forEach(g => g.itens.forEach(i => { if(!aplicavel(d,i.id)) return; const a = d.itens[i.id]; if(!a || !a.r) nr.push(i.t); else if(a.r === 'na' && !(a.obs||'').trim()) naSemJust.push(i.t); })));
   const fotosF = Object.keys(FOTO_INDEX).filter(k => !(d.fotosObr[k]||[]).length).map(k => FOTO_INDEX[k]);
   const notasF = EIXOS.filter(([k]) => { const n = d.notas[k]; return !n || n.n == null || !(n.j||'').trim(); }).map(e => e[1]);
-  const estOk = d.estoque.some(r => r.sku && r.teorico !== '' && (r.exposto !== '' || r.reserva !== ''));
+  const estOk = estoqueOk(d);
+  const extF = STEPS.filter(s => s.extras && !extrasOk(d, s.k)).map(s => s.t);
   const ocF = (d.ocorrencias||[]).filter(o => !(o.desc||'').trim() || !(o.local||'').trim());
   const critF = (d.ocorrencias||[]).filter(o => o.crit === 'critica' && !o.comunicado);
   return [
@@ -922,7 +938,9 @@ function aceite(d){
     ['Todos os itens aplicáveis respondidos', !nr.length, nr.length + ' sem resposta: ' + nr.slice(0,4).join(', ') + (nr.length > 4 ? '…' : '')],
     ['N/A justificado', !naSemJust.length, 'Falta justificar: ' + naSemJust.join(', ')],
     ['Notas dos quatro eixos com justificativa', !notasF.length, 'Falta: ' + notasF.join(', ')],
-    ['Contagem de estoque com SKU e quantidades', estOk, 'Preencha ao menos um SKU com contagem e teórico.'],
+    ['Nome completo de quem atendeu', atendentesOk(d), 'Informe na etapa Cliente oculto o nome completo da colaboradora que atendeu.'],
+    ['Contagem de todos os produtos', estOk, 'Preencha Exposto e Reserva de todos os produtos (use 0 se não houver) e dê nome aos "Outros".'],
+    ['Outros locais com nome, resposta e foto', !extF.length, 'Complete os outros locais em: ' + extF.join(', ')],
     ['Fotos obrigatórias', !fotosF.length, 'Faltam: ' + fotosF.join(', ')],
     ['Ocorrências com local e descrição', !ocF.length, ocF.length + ' ocorrência(s) incompleta(s).'],
     ['Ocorrências críticas comunicadas', !critF.length, 'Confirme a comunicação imediata das críticas.']
@@ -931,7 +949,8 @@ function aceite(d){
 function envioBody(d){
   const ck = aceite(d); const ok = ck.every(c => c[1]);
   const idx = indice(d); const crit = (d.ocorrencias||[]).filter(o => o.crit === 'critica').length;
-  return `<div class="grid2">
+  return `${revisaoBody(d)}
+  <div class="grid2">
     <div class="idx-card"><span class="note" style="margin:0;font-weight:600">Índice PEX desta visita</span><div class="idx">${nf1(idx)}</div><p class="note" style="margin:0">${idx == null ? 'Dê as notas dos eixos.' : ESCALA[Math.round(idx)]}${crit ? ` · <b style="color:var(--bad)">${crit} crítica(s) bloqueiam a aprovação</b>` : ''}</p></div>
     <div class="card"><div class="bars">${EIXOS.map(([k,t]) => { const n = notaN(d,k); return `<div class="bar"><span>${t}</span><div class="tr"><i class="${typeof n === 'number' && n < 3 ? 'low' : ''}" style="width:${typeof n === 'number' ? n/5*100 : 0}%"></i><span class="ref" style="left:60%"></span></div><b>${n === 'na' ? 'N/A' : n == null ? '—' : n}</b></div>`; }).join('')}</div></div>
   </div>
@@ -957,6 +976,7 @@ function fotoArr(key, ctx, create){
   if(t === 'obr'){ if(create) d.fotosObr[k] = d.fotosObr[k] || []; return d.fotosObr[k] || []; }
   if(t === 'est'){ const r = d.estoque[+k]; if(create) r.fotos = r.fotos || []; return r.fotos || []; }
   if(t === 'oc'){ const o = d.ocorrencias[+k]; if(create) o.fotos = o.fotos || []; return o.fotos || []; }
+  if(t === 'ext'){ const [sk, j] = k.split('.'); const x = ((d.extras||{})[sk]||[])[+j]; if(!x) return []; if(create) x.fotos = x.fotos || []; return x.fotos || []; }
   return [];
 }
 async function compress(file){
@@ -1012,7 +1032,7 @@ function renderReport(){
     <div class="ed-top">
       <button class="btn icon" type="button" data-act="fechar" id="btn-fechar-rep" aria-label="Voltar" title="Voltar">${ic('left')}</button>
       <div style="min-width:0;flex:1"><div class="row" style="gap:8px;margin-bottom:4px">${pill(ST[st][0], ST[st][1])}${pill(sit, sitCls(sit))}</div><h1>${esc(evName(v.evento))}</h1>
-        <div class="ed-meta"><span class="mono">${esc(v.codigo)}</span><span>${ic('user','sm')} ${esc(quem(v))}</span><span>Líder: ${esc(v.lider || '—')}</span><span>${ic('envio','sm')} ${fdt(v.enviadoEm)}</span></div></div>
+        <div class="ed-meta"><span class="mono">${esc(v.codigo)}</span><span>${ic('user','sm')} ${esc(quem(v))}</span><span>Líder: ${esc(v.lider || '—')}</span>${(v.atendentes||[]).filter(Boolean).length ? `<span>Atendimento: <b style="color:var(--ink)">${esc(v.atendentes.filter(Boolean).join(', '))}</b></span>` : ''}<span>${ic('envio','sm')} ${fdt(v.enviadoEm)}</span></div></div>
     </div>
     ${st === 'devolvida' && w.obs ? `<div class="banner warn"><b>Devolvida ao auditor:</b> ${esc(w.obs)}</div>` : ''}
     <div class="grid2">
@@ -1024,10 +1044,10 @@ function renderReport(){
     <section class="card rep-sec"><div class="card-h"><h2>Ocorrências e plano de ação</h2><span class="note">${ocs.filter(o => ocAberta(v._id,o)).length} em aberto</span></div>
       ${ocs.map((o,i) => { const a = (w.acoes||{})[o.id] || {}; const ast = a.status || 'aberta'; const venc = ast !== 'resolvida' && a.prazo && a.prazo < new Date().toISOString().slice(0,10); return `<div class="oc ${esc(o.crit)}">
         <div class="row" style="justify-content:space-between"><span><span class="mono">${esc(v.codigo)}-O${i+1}</span> · ${pill(CRIT[o.crit][0], CRIT[o.crit][1])} ${reincidente(v,o) ? pill('Reincidente','warn') : ''}</span>${pill(ACAO[ast][0], ACAO[ast][1])}</div>
-        <div><b>${esc(EIXOS.find(e => e[0] === o.eixo)[1])}${o.local ? ' · ' + esc(o.local) : ''}</b><br>${esc(o.desc||'')}${o.acao ? `<br><span class="muted">Ação proposta: ${esc(o.acao)}</span>` : ''}${o.crit === 'critica' ? `<br><span class="note">${o.comunicado ? 'Comunicado na hora e área suspensa.' : 'Sem confirmação de comunicação imediata.'}</span>` : ''}</div>
+        <div><b>${esc(CATEG[o.eixo] || o.eixo)}${o.local ? ' · ' + esc(o.local) : ''}</b><br>${esc(o.desc||'')}${o.colab ? `<br><span class="muted">Colaboradora envolvida: <b>${esc(o.colab)}</b></span>` : ''}${o.acao ? `<br><span class="muted">Ação proposta: ${esc(o.acao)}</span>` : ''}${o.crit === 'critica' ? `<br><span class="note">${o.comunicado ? 'Comunicado na hora e área suspensa.' : 'Sem confirmação de comunicação imediata.'}</span>` : ''}</div>
         ${photos('', o.fotos||[], false)}
         ${canAct ? `<div class="fgrid">
-          <label class="f">Responsável<select id="w-a-${o.id}-resp" data-w="acoes.${o.id}.resp"><option value="">Escolha…</option>${AREAS.map(x => `<option${a.resp === x ? ' selected' : ''}>${x}</option>`).join('')}</select></label>
+          <label class="f">Responsável pela correção<input type="text" id="w-a-${o.id}-resp" data-w="acoes.${o.id}.resp" value="${esc(a.resp||'')}" list="dl-areas" placeholder="Nome completo de quem vai corrigir"></label>
           <label class="f">Prazo<input type="date" id="w-a-${o.id}-prazo" data-w="acoes.${o.id}.prazo" value="${esc(a.prazo||'')}"${venc ? ' style="border-color:var(--bad)"' : ''}></label>
           <label class="f">Status<select id="w-a-${o.id}-st" data-w="acoes.${o.id}.status" data-rerender>${Object.entries(ACAO).map(([k,[t]]) => `<option value="${k}"${ast === k ? ' selected' : ''}>${t}</option>`).join('')}</select></label>
         </div>
@@ -1035,17 +1055,19 @@ function renderReport(){
         ${photos('acao:' + o.id, a.fotos||[], true)}` : (a.resp || a.prazo ? `<p class="note">Responsável: ${esc(a.resp||'—')} · prazo ${fiso(a.prazo)}${venc ? ' · <b style="color:var(--bad)">vencido</b>' : ''}${a.obs ? ' · ' + esc(a.obs) : ''}</p>${photos('', a.fotos||[], false)}` : '')}
       </div>`; }).join('') || '<p class="empty">Nenhuma ocorrência registrada.</p>'}
     </section>
-    <section class="card rep-sec"><h2>Estoque</h2>
-      <div class="skus">${(v.estoque||[]).filter(r => r.sku && (r.exposto !== '' || r.reserva !== '' || r.teorico !== '')).map(r => { const f = (+r.exposto||0) + (+r.reserva||0); const dv = r.teorico === '' ? null : f - (+r.teorico||0); return `<div class="sku"><b>${esc(r.sku)}</b>
-        <div class="sku-r"><span>Exposto <b>${esc(r.exposto||0)}</b></span><span>Reserva <b>${esc(r.reserva||0)}</b></span><span>Teórico <b>${r.teorico === '' ? '—' : esc(r.teorico)}</b></span></div>
-        <div class="sku-r"><span>Físico <b>${f}</b></span><span>Divergência <b style="color:${dv < 0 ? 'var(--bad)' : dv > 0 ? 'var(--ok)' : 'inherit'}">${dv == null ? '—' : (dv > 0 ? '+' : '') + dv}</b></span></div>
+    <section class="card rep-sec"><div class="card-h"><h2>Estoque</h2>${canAct ? '<span class="note">Informe o teórico (saldo do sistema) para ver a divergência</span>' : ''}</div>
+      <datalist id="dl-areas">${AREAS.map(x => `<option value="${esc(x)}">`).join('')}</datalist>
+      <div class="skus">${(v.estoque||[]).map((r,i) => ({r, i})).filter(({r}) => r.sku && (r.exposto !== '' || r.reserva !== '')).map(({r, i}) => { const f = (+r.exposto||0) + (+r.reserva||0); const teo = teoricoDe(v, w, i); const dv = teo === '' || teo == null ? null : f - (+teo||0); return `<div class="sku"><b>${esc(r.sku)}</b>
+        <div class="sku-r"><span>Exposto <b>${esc(r.exposto||0)}</b></span><span>Reserva <b>${esc(r.reserva||0)}</b></span><span>Total <b>${f}</b></span></div>
+        ${admin ? `<div class="sku-n two"><label class="f">Teórico (sistema)${canAct ? `<input type="number" inputmode="numeric" id="w-teo-${i}" data-w="teorico.${i}" data-teo="${i}" data-total="${f}" value="${esc(teo ?? '')}">` : `<b style="font-size:16px;color:var(--ink)">${teo === '' || teo == null ? '—' : esc(teo)}</b>`}</label>
+          <div class="f" style="font-size:13px;font-weight:600;color:var(--ink-2);display:flex;flex-direction:column;gap:6px">Divergência<b class="mono" id="w-div-${i}" style="font-size:20px;padding-top:10px;color:${dv < 0 ? 'var(--bad)' : dv > 0 ? 'var(--ok)' : 'inherit'}">${dv == null ? '—' : (dv > 0 ? '+' : '') + dv}</b></div></div>` : ''}
         ${r.just ? `<p class="note" style="margin:0">${esc(r.just)}</p>` : ''}${(r.fotos||[]).length ? photos('', r.fotos, false) : ''}</div>`; }).join('') || '<div class="empty">Sem contagem.</div>'}</div>
     </section>
     <section class="card rep-sec"><h2>Fotos obrigatórias</h2>
       ${Object.entries(FOTO_INDEX).map(([k,t]) => `<div class="rep-it"><span>${t}</span><span>${(v.fotosObr[k]||[]).length ? '' : pill('Faltando','bad')}</span>${(v.fotosObr[k]||[]).length ? photos('', v.fotosObr[k], false) : ''}</div>`).join('')}
     </section>
     ${secs.map(({s, its}) => `<section class="card rep-sec"><div class="card-h"><h2>${s.t}</h2><span class="note">${its.filter(i => (v.itens[i.id]||{}).r === 'nc').length} não conforme(s)</span></div>
-      <div>${its.map(i => { const a = v.itens[i.id] || {}; const r = a.r; return `<div class="rep-it"><span>${i.t}</span>${r === 'c' ? pill('Conforme','ok') : r === 'nc' ? pill('Não conforme','bad') : r === 'na' ? pill('N/A','') : pill('Sem resposta','warn')}${a.obs ? `<span class="o">${esc(a.obs)}</span>` : ''}${(a.fotos||[]).length ? photos('', a.fotos, false) : ''}</div>`; }).join('')}</div></section>`).join('')}
+      <div>${its.map(i => { const a = v.itens[i.id] || {}; const r = a.r; return `<div class="rep-it"><span>${i.t}</span>${r === 'c' ? pill('Conforme','ok') : r === 'nc' ? pill('Não conforme','bad') : r === 'na' ? pill('N/A','') : pill('Sem resposta','warn')}${a.obs ? `<span class="o">${esc(a.obs)}</span>` : ''}${(a.fotos||[]).length ? photos('', a.fotos, false) : ''}</div>`; }).join('')}${((v.extras||{})[s.k]||[]).map(x => `<div class="rep-it"><span>Outro local: <b>${esc(x.local || '—')}</b></span>${x.r === 'c' ? pill('Conforme','ok') : x.r === 'nc' ? pill('Não conforme','bad') : pill('Sem resposta','warn')}${x.obs ? `<span class="o">${esc(x.obs)}</span>` : ''}${(x.fotos||[]).length ? photos('', x.fotos, false) : ''}</div>`).join('')}</div></section>`).join('')}
   </div>`;
 }
 function histHtml(w){ return (w.hist||[]).slice().reverse().map(h => `<span>${fdt(h.em)} · ${esc(ST[h.s] ? ST[h.s][0] : h.s)} · ${esc(who(h.por))}${h.obs ? ' — ' + esc(h.obs) : ''}</span>`).join(''); }
@@ -1057,7 +1079,7 @@ function validPanel(v, w, st){
   return `<section class="card stack" style="border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-50)">
     <div class="card-h"><h2>Validação da administração</h2>${pill(ST[st][0], ST[st][1])}</div>
     <div class="req">
-      <label class="chk req-i${w.compras && w.compras.ok ? ' done' : ''}"><input type="checkbox" id="w-compras-ok" data-w="compras.ok" data-bool data-rerender${w.compras && w.compras.ok ? ' checked' : ''}><span><b>Compras</b> — inventário conciliado com vendas, entradas, transferências e baixas; ajustes autorizados conforme alçada</span></label>
+      <label class="chk req-i${w.compras && w.compras.ok ? ' done' : ''}"><input type="checkbox" id="w-compras-ok" data-w="compras.ok" data-bool data-rerender${w.compras && w.compras.ok ? ' checked' : ''}><span><b>Compras</b> — teórico informado no Estoque acima e inventário conciliado com vendas, entradas, transferências e baixas; ajustes autorizados conforme alçada</span></label>
       <label class="chk req-i${w.operacoes && w.operacoes.ok ? ' done' : ''}"><input type="checkbox" id="w-oper-ok" data-w="operacoes.ok" data-bool data-rerender${w.operacoes && w.operacoes.ok ? ' checked' : ''}><span><b>Operações</b> — atendimento, organização e aderência aos procedimentos tratados</span></label>
       <label class="chk req-i${w.manutencao && w.manutencao.ok ? ' done' : ''}"><input type="checkbox" id="w-man-ok" data-w="manutencao.ok" data-bool data-rerender${w.manutencao && w.manutencao.ok ? ' checked' : ''}><span><b>Manutenção</b> — itens estruturais, elétricos e atrações avaliados e liberados tecnicamente</span></label>
     </div>
@@ -1138,13 +1160,13 @@ document.addEventListener('click', async ev => {
   else if(a === 'res'){ const d = S.edit.d; const id = b.dataset.item; d.itens[id] = d.itens[id] || {}; d.itens[id].r = b.dataset.v; queueSave(); keepScroll(renderEditor); }
   else if(a === 'nota'){ const d = S.edit.d; const k = b.dataset.eixo; d.notas[k] = d.notas[k] || {}; d.notas[k].n = b.dataset.v === 'na' ? 'na' : +b.dataset.v; queueSave(); keepScroll(renderEditor); }
   else if(a === 'identificar'){ S.edit.d.identificadoEm = Date.now(); queueSave(); keepScroll(renderEditor); }
-  else if(a === 'est-add'){ S.edit.d.estoque.push({sku:'', exposto:'', reserva:'', teorico:'', just:'', fotos:[]}); queueSave(); keepScroll(renderEditor); }
+  else if(a === 'est-add'){ S.edit.d.estoque.push({sku:'', outro:true, exposto:'', reserva:'', just:'', fotos:[]}); queueSave(); keepScroll(renderEditor); }
   else if(a === 'est-rm'){ S.edit.d.estoque.splice(+b.dataset.i, 1); queueSave(); keepScroll(renderEditor); }
   else if(a === 'oc-add'){
     const d = S.edit.d; const item = b.dataset.item;
     if(item && d.ocorrencias.some(o => o.item === item)){ S.edit.step = STEPS.findIndex(s => s.k === 'ocorrencias'); renderEditor(); window.scrollTo(0,0); return; }
     const inf = item ? ITEM_INDEX[item] : null;
-    d.ocorrencias.push({id:'oc' + rid(), item: item || null, eixo: inf ? inf.eixo : 'estrutura', crit: inf && inf.step === 'estrutura' ? 'alta' : 'media', local:'', desc: inf ? inf.t + ': ' + ((d.itens[item]||{}).obs||'') : '', acao:'', comunicado:false, fotos: inf ? [...((d.itens[item]||{}).fotos||[])] : []});
+    d.ocorrencias.push({id:'oc' + rid(), item: item || null, eixo: inf ? inf.eixo : 'estrutura', crit: inf && inf.step === 'estrutura' ? 'alta' : 'media', local:'', desc: inf ? inf.t + ': ' + ((d.itens[item]||{}).obs||'') : '', acao:'', comunicado:false, colab: inf && inf.step === 'anonimo' ? ((d.atendentes||[]).filter(Boolean)[0] || '') : '', fotos: inf ? [...((d.itens[item]||{}).fotos||[])] : []});
     queueSave();
     if(item){ toast('Ocorrência aberta. Complete os detalhes na etapa Ocorrências.'); keepScroll(renderEditor); } else { keepScroll(renderEditor); }
   }
@@ -1464,6 +1486,121 @@ document.addEventListener('click', async ev => {
   else if(a === 'pw-ver'){ const i = b.parentNode.querySelector('input'); const ver = i.type === 'password'; i.type = ver ? 'text' : 'password'; b.setAttribute('aria-label', ver ? 'Esconder senha' : 'Mostrar senha'); }
 });
 document.addEventListener('keydown', e => { const c = e.target.closest && e.target.closest('.evc.click'); if(c && (e.key === 'Enter' || e.key === ' ') && !e.target.closest('input,select')){ e.preventDefault(); openReport(c.dataset.id); } });
+
+/* ===================== Colaboradora, estoque declarado, outros locais e revisão ===================== */
+const CATEG = {atendimento:'Atendimento', organizacao:'Organização e limpeza', auditoria:'Estoque', estrutura:'Estrutura e segurança'};
+function nomesAtend(d){ return (Array.isArray(d.atendentes) ? d.atendentes : []).map(s => (s||'').trim()).filter(Boolean); }
+function atendentesOk(d){ const l = nomesAtend(d); return l.length > 0 && l.every(n => n.split(/\s+/).length >= 2); }
+function estoqueOk(d){
+  const rows = (d.estoque||[]).filter(r => r.fixo || r.outro || r.sku);
+  return rows.length > 0 && rows.every(r => (r.sku||'').trim() && r.exposto !== '' && r.exposto != null && r.reserva !== '' && r.reserva != null);
+}
+function extrasOk(d, k){ return (((d.extras||{})[k])||[]).every(x => (x.local||'').trim() && x.r && (x.fotos||[]).length); }
+function teoricoDe(v, w, i){
+  const t = w && w.teorico ? w.teorico[i] : undefined;
+  if(t !== undefined && t !== null && t !== '') return t;
+  const r = (v.estoque||[])[i]; return r && r.teorico !== undefined ? r.teorico : '';
+}
+
+function atendentesBody(d){
+  if(!Array.isArray(d.atendentes) || !d.atendentes.length) d.atendentes = [''];
+  const at = d.atendentes;
+  return `<div class="card stack tight">
+    <div><h3>Quem te atendeu?</h3><p class="note">Nome completo da colaboradora que fez o atendimento: pelo crachá ou perguntando de forma natural, sem se identificar. Se mais de uma pessoa atendeu, adicione todas.</p></div>
+    ${at.map((n,j) => `<div class="row" style="flex-wrap:nowrap"><input type="text" id="b-at-${j}" data-b="atendentes.${j}" value="${esc(n)}" placeholder="Nome completo" autocapitalize="words" aria-label="Nome completo de quem atendeu">${at.length > 1 ? `<button type="button" class="btn icon" data-act="at-rm" data-j="${j}" aria-label="Remover este nome">${ic('lixo')}</button>` : ''}</div>`).join('')}
+    <div><button type="button" class="btn sm" data-act="at-add">${ic('plus','sm')}Adicionar outra pessoa</button></div>
+  </div>`;
+}
+
+function extrasBody(s, d){
+  const ex = ((d.extras||{})[s.k]) || [];
+  return `<div><div class="grp-t">Outros locais</div>
+    <p class="note" style="margin:-4px 0 10px">Viu algum lugar fora da lista que precisa de registro, como algo sujo, desorganizado ou uma estrutura bamba? Adicione aqui, com foto. Ex.: cercado da entrada, depósito, banheiro.</p>
+    ${ex.map((x,j) => `<div class="item ${x.r||''}" id="ext-${s.k}-${j}">
+      <div class="sku-h"><input type="text" id="b-ext-${s.k}-${j}" data-b="extras.${s.k}.${j}.local" value="${esc(x.local||'')}" placeholder="Qual local? Ex.: cercado da entrada" aria-label="Nome do local"><button type="button" class="btn sm icon" data-act="ext-rm" data-s="${s.k}" data-j="${j}" aria-label="Remover este local">${ic('lixo','sm')}</button></div>
+      <div class="seg" style="grid-template-columns:1fr 1fr" role="group" aria-label="Situação do local">
+        <button type="button" class="c${x.r === 'c' ? ' on' : ''}" data-act="ext-res" data-s="${s.k}" data-j="${j}" data-v="c" aria-pressed="${x.r === 'c'}">${ic('check')}Conforme</button>
+        <button type="button" class="nc${x.r === 'nc' ? ' on' : ''}" data-act="ext-res" data-s="${s.k}" data-j="${j}" data-v="nc" aria-pressed="${x.r === 'nc'}">${ic('x')}Não conforme</button>
+      </div>
+      <input type="text" id="b-ext-${s.k}-${j}-obs" data-b="extras.${s.k}.${j}.obs" value="${esc(x.obs||'')}" placeholder="O que você viu nesse local" aria-label="Observação sobre o local">
+      <div class="row">${photos('ext:' + s.k + '.' + j, x.fotos||[], true)}${x.r === 'nc' ? `<button type="button" class="btn sm${x.oc && (d.ocorrencias||[]).some(o => o.id === x.oc) ? '' : ' danger'}" data-act="oc-ext" data-s="${s.k}" data-j="${j}">${x.oc && (d.ocorrencias||[]).some(o => o.id === x.oc) ? ic('check','sm') + 'Ocorrência aberta' : ic('flag','sm') + 'Abrir ocorrência'}</button>` : ''}</div>
+    </div>`).join('')}
+    <button type="button" class="btn block" data-act="ext-add" data-s="${s.k}">${ic('plus')}Adicionar outro local</button></div>`;
+}
+
+function revisaoBody(d){
+  const pr = r => r === 'c' ? pill('Conforme','ok') : r === 'nc' ? pill('Não conforme','bad') : r === 'na' ? pill('N/A','') : pill('Sem resposta','warn');
+  const linha = (t, dir, extra) => `<div class="rep-it"><span>${t}</span><span>${dir}</span>${extra || ''}</div>`;
+  const blocos = STEPS.slice(0, -1).map((s, i) => {
+    const ok = stepDone(d, s); const partes = []; let corpo = '';
+    if(s.k === 'anonimo'){ const n = nomesAtend(d); corpo += linha('Atendido por', n.length ? `<b>${esc(n.join(', '))}</b>` : pill('Falta o nome','bad')); }
+    if(s.special === 'identificacao'){
+      partes.push(d.identificadoEm ? 'Identificado às ' + fdt(d.identificadoEm).slice(6) : 'Ainda não se identificou');
+      corpo += linha('Identificação', d.identificadoEm ? fdt(d.identificadoEm) : pill('Pendente','bad')) + linha('Líder presente', esc(d.lider || '—'));
+    }
+    if(s.special === 'estoque'){
+      const rows = (d.estoque||[]).filter(r => r.fixo || r.outro || r.sku);
+      const contados = rows.filter(r => r.exposto !== '' && r.reserva !== '');
+      partes.push(`${contados.length} de ${rows.length} produtos contados`);
+      corpo += rows.map(r => { const f = (+r.exposto||0) + (+r.reserva||0); const cont = r.exposto !== '' && r.reserva !== ''; return linha(esc(r.sku || 'Produto sem nome'), cont ? `<b>${f}</b> <span class="muted">(${+r.exposto||0} exp. + ${+r.reserva||0} res.)</span>` : pill('Não contado','bad'), r.just ? `<span class="o">${esc(r.just)}</span>` : ''); }).join('');
+    }
+    if(s.grupos){
+      const its = s.grupos.filter(g => !g.inflaveis || d.temInflaveis).flatMap(g => g.itens);
+      const n = k => its.filter(x => (d.itens[x.id]||{}).r === k).length; const sem = its.length - n('c') - n('nc') - n('na');
+      partes.push(`${n('c')} conforme · ${n('nc')} não conforme · ${n('na')} N/A${sem ? ` · ${sem} sem resposta` : ''}`);
+      corpo += its.map(x => { const a = d.itens[x.id] || {}; return linha(x.t, pr(a.r), `${a.obs ? `<span class="o">${esc(a.obs)}</span>` : ''}${(a.fotos||[]).length ? `<span class="o">${a.fotos.length} foto(s)</span>` : ''}`); }).join('');
+    }
+    if(s.fotos){
+      const f = s.fotos.filter(([id]) => (d.fotosObr[id]||[]).length).length; partes.push(`fotos ${f}/${s.fotos.length}`);
+      corpo += s.fotos.map(([id, t]) => linha(t, (d.fotosObr[id]||[]).length ? pill((d.fotosObr[id]).length + ' foto(s)','ok') : pill('Falta foto','bad'))).join('');
+    }
+    if(s.extras){
+      const ex = ((d.extras||{})[s.k]) || [];
+      if(ex.length){ partes.push(`${ex.length} outro(s) local(is)`); corpo += ex.map(x => linha('Outro local: ' + esc(x.local || 'sem nome'), pr(x.r), `${x.obs ? `<span class="o">${esc(x.obs)}</span>` : ''}<span class="o">${(x.fotos||[]).length} foto(s)</span>`)).join(''); }
+    }
+    if(s.eixo){
+      const nt = d.notas[s.eixo] || {}; const lb = EIXOS.find(e => e[0] === s.eixo)[1];
+      partes.push(`nota ${nt.n == null ? '—' : nt.n === 'na' ? 'N/A' : nt.n}`);
+      corpo += linha('Nota de ' + lb, nt.n == null ? pill('Sem nota','bad') : `<b>${nt.n === 'na' ? 'N/A' : nt.n + ' · ' + ESCALA[nt.n]}</b>`, `<span class="o">${nt.j ? esc(nt.j) : '<b style="color:var(--bad)">Falta a justificativa</b>'}</span>`);
+    }
+    if(s.special === 'ocorrencias'){
+      const ocs = d.ocorrencias || [];
+      partes.push(ocs.length ? `${ocs.length} ocorrência(s)` + (ocs.some(o => o.crit === 'critica') ? ` · ${ocs.filter(o => o.crit === 'critica').length} crítica(s)` : '') : 'Nenhuma ocorrência');
+      corpo += ocs.map((o, k) => linha(`${esc(d.codigo)}-O${k+1} · ${esc(CATEG[o.eixo] || o.eixo)}`, pill(CRIT[o.crit][0], CRIT[o.crit][1]), `<span class="o">${esc(o.local || 'sem local')} — ${esc(o.desc || 'sem descrição')}${o.colab ? ` · colaboradora: ${esc(o.colab)}` : ''}</span>`)).join('') || '<p class="note">Nenhuma ocorrência registrada.</p>';
+    }
+    return `<details class="fold rev${ok ? '' : ' pend'}"><summary><span class="num">${ok ? '✓' : '!'}</span><span style="min-width:0;flex:1">${i+1}. ${s.t}<small>${partes.join(' · ')}</small></span>${ic('down')}</summary>
+      <div class="fold-b">${corpo}<div style="margin-top:10px"><button type="button" class="btn sm" data-act="step" data-i="${i}">${ic('left','sm')}Voltar para esta etapa</button></div></div></details>`;
+  });
+  return `<div><div class="grp-t">Revise o que você registrou</div>
+    <p class="note" style="margin:-4px 0 10px">Toque em cada etapa para conferir tudo o que foi preenchido. As marcadas com <b style="color:var(--bad)">!</b> têm algo faltando.</p>
+    <div class="stack tight">${blocos.join('')}</div></div>`;
+}
+
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-act]'); if(!b || !S.edit) return;
+  const d = S.edit.d; const a = b.dataset.act;
+  if(a === 'at-add'){ if(!Array.isArray(d.atendentes)) d.atendentes = ['']; d.atendentes.push(''); queueSave(); keepScroll(renderEditor); const el = $('#b-at-' + (d.atendentes.length - 1)); if(el) el.focus(); }
+  else if(a === 'at-rm'){ d.atendentes.splice(+b.dataset.j, 1); queueSave(); keepScroll(renderEditor); }
+  else if(a === 'ext-add'){ if(!d.extras || typeof d.extras !== 'object' || Array.isArray(d.extras)) d.extras = {}; const k = b.dataset.s; if(!Array.isArray(d.extras[k])) d.extras[k] = []; d.extras[k].push({id:'x' + rid(), local:'', r:'', obs:'', fotos:[]}); queueSave(); keepScroll(renderEditor); const el = $('#b-ext-' + k + '-' + (d.extras[k].length - 1)); if(el) el.focus(); }
+  else if(a === 'ext-res'){ const x = d.extras[b.dataset.s][+b.dataset.j]; x.r = b.dataset.v; queueSave(); keepScroll(renderEditor); }
+  else if(a === 'ext-rm'){
+    if(!b.classList.contains('armed')){ b.classList.add('armed'); b.title = 'Toque de novo para remover'; toast('Toque de novo na lixeira para remover este local.'); setTimeout(() => { if(b.isConnected) b.classList.remove('armed'); }, 4000); return; }
+    d.extras[b.dataset.s].splice(+b.dataset.j, 1); queueSave(); keepScroll(renderEditor);
+  }
+  else if(a === 'oc-ext'){
+    const k = b.dataset.s; const x = d.extras[k][+b.dataset.j];
+    if(x.oc && (d.ocorrencias||[]).some(o => o.id === x.oc)){ S.edit.step = STEPS.findIndex(s => s.k === 'ocorrencias'); renderEditor(); window.scrollTo(0,0); return; }
+    const st = STEPS.find(s => s.k === k); const id = 'oc' + rid();
+    d.ocorrencias.push({id, item:null, ext:x.id, eixo: st.eixo || 'organizacao', crit: k === 'estrutura' ? 'alta' : 'media', local: x.local || '', desc: x.obs || '', acao:'', comunicado:false, colab:'', fotos:[...(x.fotos||[])]});
+    x.oc = id; queueSave(); toast('Ocorrência aberta. Complete os detalhes na etapa Ocorrências.'); keepScroll(renderEditor);
+  }
+});
+document.addEventListener('input', e => {
+  const t = e.target; if(!t.dataset || t.dataset.teo === undefined) return;
+  const el = $('#w-div-' + t.dataset.teo); if(!el) return;
+  if(t.value === ''){ el.textContent = '—'; el.style.color = 'inherit'; return; }
+  const dv = (+t.dataset.total) - (+t.value); el.textContent = (dv > 0 ? '+' : '') + dv; el.style.color = dv < 0 ? 'var(--bad)' : dv > 0 ? 'var(--ok)' : 'inherit';
+});
 
 init();
 </script>
