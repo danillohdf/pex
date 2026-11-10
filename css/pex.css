@@ -505,3 +505,23 @@ select{max-width:100%}
 .fgrid>*,.toolbar>*{min-width:0}
 .ac-filtros{grid-template-columns:repeat(auto-fill,minmax(min(100%,180px),1fr))}
 @media (min-width:1200px){ .ac-filtros{grid-template-columns:repeat(4,1fr)} }
+
+/* ---------- 21. Dashboard executivo: mapa de calor e evolução ---------- */
+.hm-wrap{overflow:auto;max-height:440px;border-radius:var(--r)}
+.hm-t th{position:sticky;top:0}
+.hm-t th:not(:first-child){text-align:center}
+.hm-t td{padding:8px 10px;font-size:13.5px}
+.hm-t td.hm{text-align:center;font-weight:700;font-variant-numeric:tabular-nums;width:84px;border-bottom:2px solid var(--surface);border-left:2px solid var(--surface)}
+.hm-t td.na{background:var(--surface-2);color:var(--faint);font-weight:600}
+.hm-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:12px}
+.hm-leg i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:6px;vertical-align:-2px}
+svg.ln{width:100%;height:auto;display:block;margin-bottom:6px}
+.ln .gl{stroke:var(--line);stroke-width:1}
+.ln .ref{stroke:var(--faint);stroke-width:1.5;stroke-dasharray:4 4}
+.ln .ax{font-size:11px;fill:var(--muted);font-family:var(--f)}
+.ln-p{fill:none;stroke:var(--brand);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.ln .dot{fill:var(--brand);stroke:var(--surface);stroke-width:2}
+.ln .hit{fill:transparent;cursor:default}
+.ln .pt:hover .dot{r:6}
+details.filtros>summary{padding:13px 18px}
+@media (min-width:768px){ details.filtros>summary{display:none} details.filtros .fold-b{padding:18px} details.filtros-int>summary{display:none} details.filtros-int .ac-filtros{margin-top:0 !important} }

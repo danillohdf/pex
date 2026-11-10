@@ -324,6 +324,7 @@ function render(){
 
 /* ===================== Painel ===================== */
 function renderPainel(){
+  if(S.me.admin){ renderDashExec(); return; }
   const evs = [...S.eventos.entries()].map(([id,e]) => ({id, ...e})).sort((a,b) => (a.ordem??0) - (b.ordem??0));
   const last = ultimaPorEvento();
   const rows = evs.map(e => { const v = last.get(e.id); return {e, v, idx: v ? indice(v) : null, sit: v ? situacao(v) : 'Pendente', st: v ? statusOf(v) : null}; });
@@ -1408,7 +1409,8 @@ function renderPendencias(){
         <div class="search">${ic('busca')}<input type="search" id="pf-q" data-pf="q" placeholder="Buscar por código, problema, local, responsável ou parque" value="${esc(f.q || '')}" aria-label="Buscar ações"></div>
         ${filtrando ? `<button class="btn sm ghost" type="button" data-act="pf-limpar">${ic('x','sm')}Limpar filtros</button>` : ''}
       </div>
-      <div class="fgrid ac-filtros">
+      <details class="filtros-int"${innerWidth >= 768 || Object.entries(f).filter(([k, v]) => v && k !== 'q').length ? ' open' : ''}><summary class="note" style="margin:0;cursor:pointer;font-weight:650">Mais filtros${Object.entries(f).filter(([k, v]) => v && k !== 'q').length ? ` (${Object.entries(f).filter(([k, v]) => v && k !== 'q').length} ativo(s))` : ''}</summary>
+      <div class="fgrid ac-filtros" style="margin-top:10px">
         ${sel('parque', 'Parque', 'Todos', parques.map(p => [p.id, p.nome]))}
         ${sel('status', 'Status', 'Todos', [['abertas','Abertas e reabertas'],['atrasadas','Atrasadas'],['criticas','Críticas abertas'], ...Object.entries(AC_ST).map(([k, [t]]) => [k, t])])}
         ${sel('crit', 'Criticidade', 'Todas', Object.entries(CRIT).map(([k, [t]]) => [k, t]))}
@@ -1417,7 +1419,7 @@ function renderPendencias(){
         ${sel('origem', 'Auditoria de origem', 'Todas', [['manual', 'Criadas manualmente'], ...origens.map(v => [v._id, `${v.codigo} · ${evName(v.evento)}`])])}
         <label class="f">Identificada a partir de<input type="date" data-pf="de" value="${esc(f.de || '')}"></label>
         <label class="f">até<input type="date" data-pf="ate" value="${esc(f.ate || '')}"></label>
-      </div>
+      </div></details>
     </section>
     <div class="row between"><span class="note" style="margin:0"><b style="color:var(--ink)">${lista.length}</b> ${lista.length === 1 ? 'ação' : 'ações'}${filtrando ? ' com os filtros atuais' : ''}</span></div>
     ${lista.length ? `
@@ -1704,6 +1706,170 @@ document.addEventListener('click', ev => {
   else if(a === 'nc-just-rm'){ const w = S.rep.w; if(w.justificativas) delete w.justificativas[b.dataset.k]; saveVal(); renderReport(); }
 });
 document.addEventListener('input', e => { if(e.target.id === 'nc-just-txt') S.ncJustTxt = e.target.value; });
+
+/* ===================== Fase 4 · Dashboard executivo (administração) ===================== */
+const HEAT = ['#B4281F','#D9644F','#F1B6A8','#ECEBE8','#9DC4E6','#2F6FB0']; // 0..5 · divergente vermelho↔azul, 3 = neutro
+const HEAT_TXT = ['#fff','#fff','#14201C','#14201C','#14201C','#fff'];
+const DIA = 864e5;
+const diasDesde = ms => ms ? Math.floor((Date.now() - ms) / DIA) : null;
+function dashDados(){
+  const f = S.df || {}; const de = f.de ? new Date(f.de + 'T00:00:00').getTime() : 0; const ate = f.ate ? new Date(f.ate + 'T23:59:59').getTime() : Infinity;
+  const evs = [...S.eventos.entries()].map(([id, e]) => ({id, ...e})).filter(e => (!f.socio || (f.socio === 'sem' ? !e.franquia : e.franquia === f.socio)) && (!f.parque || e.id === f.parque));
+  const evIds = new Set(evs.map(e => e.id));
+  const auds = submetidas().filter(v => evIds.has(v.evento) && v.enviadoEm >= de && v.enviadoEm <= ate && (!f.auditor || v.auditor === f.auditor));
+  const porParque = new Map(); auds.forEach(v => { if(!porParque.has(v.evento)) porParque.set(v.evento, []); porParque.get(v.evento).push(v); });
+  porParque.forEach(l => l.sort((a, b) => a.enviadoEm - b.enviadoEm));
+  let linhas = evs.map(e => { const l = porParque.get(e.id) || []; const u = l[l.length - 1]; const ant = l[l.length - 2];
+    const acs = [...S.acoes.values()].filter(a => a.evento === e.id);
+    return {e, u, ant, n: l.length, idx: u ? indice(u) : null, idxAnt: ant ? indice(ant) : null, sit: u ? situacao(u) : 'Sem auditoria',
+      pend: acs.filter(acAbertaSt).length, crit: acs.filter(a => a.criticidade === 'critica' && acAbertaSt(a)).length + (u ? (u.ocorrencias || []).filter(o => o.crit === 'critica' && !acaoDaOc(u._id, o.id) && ocAberta(u._id, o)).length : 0)}; });
+  if(f.sit) linhas = linhas.filter(r => r.sit === f.sit);
+  let acoes = [...S.acoes.values()].filter(a => evIds.has(a.evento));
+  if(f.dep) acoes = acoes.filter(a => f.dep === 'sem' ? !a.departamento : a.departamento === f.dep);
+  return {f, evs, auds, porParque, linhas, acoes};
+}
+function renderDashExec(){
+  const D = dashDados(); const {f, evs, auds, linhas, acoes} = D;
+  const com = linhas.filter(r => r.u); const idxs = com.map(r => r.idx).filter(x => x != null);
+  const media = idxs.length ? Math.round(idxs.reduce((a, b) => a + b, 0) / idxs.length * 10) / 10 : null;
+  const aguard = auds.filter(v => ['enviado','em_validacao'].includes(statusOf(v))).length;
+  const crit = acoes.filter(a => a.criticidade === 'critica' && acAbertaSt(a)).length; const atras = acoes.filter(acAtrasada).length;
+  const bloq = com.filter(r => r.sit === 'Bloqueado').length;
+  const socios = [...new Set([...S.eventos.values()].map(e => e.franquia).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR', {numeric: true}));
+  const auditores = [...new Set(submetidas().map(v => v.auditor).filter(Boolean))];
+  const sel = (k, rot, todos, opts) => `<label class="f">${rot}<select data-df="${k}"><option value="">${todos}</option>${opts.map(([v, t]) => `<option value="${esc(v)}"${f[k] === v ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></label>`;
+  const filtrando = Object.values(f).some(Boolean);
+  const alerta = (t, n, sub, cls, act, v) => `<button type="button" class="kpi ${n ? cls : ''}" data-act="${act}" data-v="${v || ''}"><small>${t}</small><b>${n}</b><i>${sub}</i></button>`;
+  $('#main').innerHTML = `<div class="stack">
+    ${pageHead('Dashboard', 'Visão da operação: o que exige ação agora, desempenho dos parques, departamentos e problemas que se repetem.', `<button class="btn" type="button" data-act="rel-gerencial">${ic('envio')}Relatório gerencial</button>`)}
+    <details class="fold filtros"${innerWidth >= 768 || filtrando ? ' open' : ''}><summary>${ic('busca')}Filtros${filtrando ? ` <span class="pill brand plain">${Object.values(f).filter(Boolean).length} ativo(s)</span>` : ''}${ic('down')}</summary><div class="fold-b stack tight">
+      <div class="fgrid ac-filtros">
+        <label class="f">Auditorias de<input type="date" data-df="de" value="${esc(f.de || '')}"></label>
+        <label class="f">até<input type="date" data-df="ate" value="${esc(f.ate || '')}"></label>
+        ${sel('parque', 'Parque', 'Todos', [...S.eventos.entries()].map(([id, e]) => [id, e.nome]).sort((a, b) => a[1].localeCompare(b[1], 'pt-BR')))}
+        ${sel('socio', 'Sócio', 'Todos', [...socios.map(s => [s, s]), ['sem', 'Sem sócio']])}
+        ${sel('auditor', 'Auditor', 'Todos', auditores.map(id => [id, S.names[id] || 'Auditor']))}
+        ${sel('dep', 'Departamento', 'Todos', [...Object.entries(DEPS), ['sem', 'Sem departamento']])}
+        ${sel('sit', 'Situação', 'Todas', ['Bloqueado','Reprovado','Em análise','Aprovado','Sem auditoria'].map(s => [s, s]))}
+      </div>
+      ${filtrando ? `<div><button class="btn sm ghost" type="button" data-act="df-limpar">${ic('x','sm')}Limpar filtros</button></div>` : ''}
+    </div></details>
+    <div class="sec-t">Exige ação agora</div>
+    <section class="kpis" aria-label="Alertas">
+      ${alerta('Ocorrências críticas abertas', crit, 'prioridade máxima', 'bad', 'dash-ir', 'criticas')}
+      ${alerta('Ações atrasadas', atras, 'prazo vencido', 'bad', 'dash-ir', 'atrasadas')}
+      ${alerta('Aguardando validação', aguard, 'auditorias enviadas', 'warn', 'tab', 'validacao')}
+      ${alerta('Parques bloqueados', bloq, 'crítica em aberto', 'bad', 'df-sit', 'Bloqueado')}
+    </section>
+    <div class="sec-t">Desempenho</div>
+    <section class="kpis" aria-label="Desempenho">
+      <div class="kpi hero"><div><small>Índice PEX médio</small><b>${nf1(media)}</b><i>${media == null ? 'sem auditorias no período' : ESCALA[Math.round(media)] + ' · última auditoria de cada parque'}</i></div>
+        <div style="text-align:right;display:grid;justify-items:end;gap:2px"><small>Parques auditados</small><b style="font-size:26px;color:var(--ink)">${com.length}<span style="font-size:15px;color:var(--muted);font-weight:600"> / ${evs.length}</span></b><div class="meter" aria-hidden="true"><i style="width:${evs.length ? com.length / evs.length * 100 : 0}%"></i></div></div></div>
+      <button type="button" class="kpi ok" data-act="df-sit" data-v="Aprovado"><small>Aprovados</small><b>${com.filter(r => r.sit === 'Aprovado').length}</b><i>índice ≥ 3 e validados</i></button>
+      <button type="button" class="kpi" data-act="df-sit" data-v="Reprovado"><small>Reprovados</small><b style="color:var(--warn)">${com.filter(r => r.sit === 'Reprovado').length}</b><i>índice abaixo de 3</i></button>
+      <button type="button" class="kpi" data-act="df-sit" data-v="Em análise"><small>Em análise</small><b>${com.filter(r => r.sit === 'Em análise').length}</b><i>aguardando validação</i></button>
+      <button type="button" class="kpi" data-act="dash-ir" data-v="abertas"><small>Ações corretivas abertas</small><b>${acoes.filter(acAbertaSt).length}</b><i>${acoes.filter(a => a.status === 'concluida').length} concluídas</i></button>
+    </section>
+    ${rankingHtml(D)}
+    <div class="grid2">${heatHtml(D)}${evolucaoHtml(D)}</div>
+    ${depsHtml(D)}
+    ${recorrHtml(D)}
+  </div>`;
+}
+function rankingHtml(D){
+  const modo = S.dr || 'piores';
+  let l = D.linhas.slice();
+  if(modo === 'piores') l = l.filter(r => r.u).sort((a, b) => (a.idx ?? 9) - (b.idx ?? 9));
+  else if(modo === 'melhores') l = l.filter(r => r.u).sort((a, b) => (b.idx ?? -1) - (a.idx ?? -1));
+  else l = l.sort((a, b) => (b.u ? diasDesde(b.u.enviadoEm) : 1e9) - (a.u ? diasDesde(a.u.enviadoEm) : 1e9));
+  const tog = (k, t) => `<button type="button" data-act="dr" data-v="${k}" aria-pressed="${modo === k}">${t}</button>`;
+  const delta = r => r.idx == null || r.idxAnt == null ? '' : (() => { const d = Math.round((r.idx - r.idxAnt) * 10) / 10; return d === 0 ? '<span class="sub">= anterior</span>' : `<span class="sub" style="color:${d > 0 ? 'var(--ok)' : 'var(--bad)'}">${d > 0 ? '▲' : '▼'} ${nf1(Math.abs(d))} vs anterior</span>`; })();
+  return `<section class="card"><div class="card-h"><h2>Ranking de parques</h2><div class="segtog" role="group" aria-label="Ordenação do ranking">${tog('piores','Piores')}${tog('melhores','Melhores')}${tog('recentes','Sem avaliação recente')}</div></div>
+    ${l.length ? `<div class="dt-wrap" style="box-shadow:none"><table><thead><tr><th>Parque</th><th class="r">Índice</th><th>Última auditoria</th><th>Situação</th><th class="r">Pendências</th><th class="r">Críticas</th></tr></thead><tbody>
+      ${l.slice(0, 12).map(r => `<tr class="click" data-act="parque-abrir" data-id="${esc(r.e.id)}" tabindex="0">
+        <td><b>${esc(r.e.nome)}</b><span class="sub">${r.e.franquia ? 'Sócio ' + esc(r.e.franquia) : 'Sem sócio'} · ${r.n} auditoria(s)</span></td>
+        <td class="r"><b style="font-size:16px">${nf1(r.idx)}</b>${delta(r)}</td>
+        <td>${r.u ? `${fd(r.u.enviadoEm)}<span class="sub"${diasDesde(r.u.enviadoEm) > 90 ? ' style="color:var(--warn);font-weight:650"' : ''}>há ${diasDesde(r.u.enviadoEm)} dia(s)</span>` : '<span class="muted">Nunca auditado</span>'}</td>
+        <td>${pill(r.sit, sitCls(r.sit))}</td>
+        <td class="r">${r.pend || '<span class="muted">0</span>'}</td>
+        <td class="r">${r.crit ? `<b style="color:var(--bad)">${r.crit}</b>` : '<span class="muted">0</span>'}</td></tr>`).join('')}
+    </tbody></table></div>${l.length > 12 ? `<p class="note">Mostrando 12 de ${l.length}. A lista completa está em Parques.</p>` : ''}` : `<div class="empty">${ic('painel')}Nenhuma auditoria no período ou filtros escolhidos.</div>`}
+  </section>`;
+}
+function heatHtml(D){
+  const l = D.linhas.filter(r => r.u).sort((a, b) => (a.idx ?? 9) - (b.idx ?? 9));
+  const cel = (r, k, t) => { const n = notaN(r.u, k); if(typeof n !== 'number') return `<td class="hm na" title="${esc(r.e.nome)} · ${t}: ${n === 'na' ? 'não se aplica' : 'sem nota'}">${n === 'na' ? 'N/A' : '—'}</td>`;
+    return `<td class="hm" style="background:${HEAT[n]};color:${HEAT_TXT[n]}" title="${esc(r.e.nome)} · ${t}: ${n} (${ESCALA[n]})">${n}</td>`; };
+  return `<section class="card"><div class="card-h"><h2>Mapa de calor por eixo</h2><span class="note">nota da última auditoria</span></div>
+    ${l.length ? `<div class="hm-wrap"><table class="hm-t"><thead><tr><th>Parque</th>${EIXOS.map(([k, t]) => `<th class="r">${t}</th>`).join('')}</tr></thead><tbody>
+      ${l.map(r => `<tr class="click" data-act="parque-abrir" data-id="${esc(r.e.id)}"><td>${esc(r.e.nome)}</td>${EIXOS.map(([k, t]) => cel(r, k, t)).join('')}</tr>`).join('')}
+    </tbody></table></div>
+    <div class="hm-leg" aria-label="Legenda">${HEAT.map((c, i) => `<span><i style="background:${c}"></i>${i} ${ESCALA[i]}</span>`).join('')}</div>` : `<div class="empty">${ic('painel')}Sem notas no período.</div>`}
+  </section>`;
+}
+function evolucaoHtml(D){
+  const pq = S.dpq || ''; const pts = [];
+  if(pq){ (D.porParque.get(pq) || []).forEach(v => { const i = indice(v); if(i != null) pts.push({x: v.enviadoEm, y: i, t: `${fd(v.enviadoEm)} · ${v.codigo}`}); }); }
+  else { const mes = new Map(); D.auds.forEach(v => { const i = indice(v); if(i == null) return; const d = new Date(v.enviadoEm); const k = d.getFullYear() * 12 + d.getMonth(); if(!mes.has(k)) mes.set(k, []); mes.get(k).push(i); });
+    [...mes.entries()].sort((a, b) => a[0] - b[0]).forEach(([k, arr]) => { const y = arr.reduce((a, b) => a + b, 0) / arr.length; pts.push({x: new Date(Math.floor(k / 12), k % 12, 15).getTime(), y: Math.round(y * 10) / 10, t: `${p2(k % 12 + 1)}/${Math.floor(k / 12)} · média de ${arr.length} auditoria(s)`}); }); }
+  const parques = [...D.porParque.keys()].map(id => [id, evName(id)]).sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'));
+  const W = 560, H = 220, L = 34, R = 12, T = 12, B = 30;
+  let svg = '';
+  if(pts.length){
+    const x0 = pts[0].x, x1 = pts[pts.length - 1].x; const sx = x => pts.length === 1 ? (L + (W - L - R) / 2) : L + (x - x0) / (x1 - x0) * (W - L - R); const sy = y => T + (5 - y) / 5 * (H - T - B);
+    const grid = [0,1,2,3,4,5].map(g => `<line x1="${L}" x2="${W - R}" y1="${sy(g)}" y2="${sy(g)}" class="${g === 3 ? 'ref' : 'gl'}"/><text x="${L - 8}" y="${sy(g) + 4}" class="ax" text-anchor="end">${g}</text>`).join('');
+    const path = pts.map((p, i) => `${i ? 'L' : 'M'}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' ');
+    const lbl = [pts[0], pts[pts.length - 1]].filter((p, i, a) => i === 0 || p !== a[0]).map((p, i) => `<text x="${sx(p.x)}" y="${H - 8}" class="ax" text-anchor="${pts.length === 1 ? 'middle' : i ? 'end' : 'start'}">${fd(p.x)}</text>`).join('');
+    svg = `<svg viewBox="0 0 ${W} ${H}" class="ln" role="img" aria-label="Evolução do índice PEX">${grid}<path d="${path}" class="ln-p"/>${pts.map(p => `<g class="pt"><circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="12" class="hit"/><circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="4.5" class="dot"/><title>${esc(p.t)}: índice ${nf1(p.y)}</title></g>`).join('')}${lbl}</svg>`;
+  }
+  return `<section class="card"><div class="card-h"><h2>Evolução do índice</h2><label class="f" style="min-width:180px"><span class="sr-only">Parque</span><select data-dpq aria-label="Parque da evolução"><option value="">Média mensal (todos)</option>${parques.map(([id, n]) => `<option value="${esc(id)}"${pq === id ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select></label></div>
+    ${pts.length ? svg + `<p class="note" style="margin:0">${pq ? 'Cada ponto é uma auditoria do parque.' : 'Cada ponto é a média das auditorias do mês.'} Linha tracejada = 3, Adequado.</p>` : `<div class="empty">${ic('painel')}Sem auditorias para mostrar a evolução.</div>`}
+  </section>`;
+}
+function depsHtml(D){
+  const linhas = [...Object.entries(DEPS), ['', 'Sem departamento']].map(([k, t]) => {
+    const l = D.acoes.filter(a => (a.departamento || '') === k); const concl = l.filter(a => a.status === 'concluida');
+    const tempos = concl.filter(a => a.concluido_em).map(a => (new Date(a.concluido_em) - new Date(a.criado_em)) / DIA);
+    return {k, t, n: l.length, c: concl.length, and: l.filter(a => ['em_andamento','aguardando_validacao'].includes(a.status)).length, atr: l.filter(acAtrasada).length, pct: l.length ? Math.round(concl.length / l.length * 100) : null, tm: tempos.length ? tempos.reduce((a, b) => a + b, 0) / tempos.length : null};
+  }).filter(r => r.n || r.k).sort((a, b) => b.n - a.n);
+  return `<section class="card"><div class="card-h"><h2>Departamentos</h2><span class="note">ações corretivas atribuídas, do mais acionado ao menos</span></div>
+    <div class="dt-wrap" style="box-shadow:none"><table><thead><tr><th>Departamento</th><th class="r">Atribuídas</th><th class="r">Concluídas</th><th class="r">Em andamento</th><th class="r">Atrasadas</th><th style="min-width:160px">Conclusão</th><th class="r">Tempo médio</th></tr></thead><tbody>
+      ${linhas.map(r => `<tr class="click" data-act="dash-dep" data-v="${r.k || 'sem'}"><td><b>${esc(r.t)}</b></td><td class="r">${r.n}</td><td class="r">${r.c}</td><td class="r">${r.and}</td><td class="r">${r.atr ? `<b style="color:var(--bad)">${r.atr}</b>` : '0'}</td>
+        <td>${r.pct == null ? '<span class="muted">—</span>' : `<div class="row" style="gap:8px;flex-wrap:nowrap"><div class="pbar" style="flex:1"><i style="width:${r.pct}%"></i></div><span class="num" style="min-width:38px;text-align:right">${r.pct}%</span></div>`}</td>
+        <td class="r">${r.tm == null ? '<span class="muted">—</span>' : r.tm < 1 ? '< 1 dia' : Math.round(r.tm) + ' dia(s)'}</td></tr>`).join('')}
+    </tbody></table></div></section>`;
+}
+function recorrHtml(D){
+  const itens = new Map(); const reinc = [];
+  D.porParque.forEach((l, ev) => { const vistos = new Map();
+    l.forEach(v => Object.entries(v.itens || {}).forEach(([id, a]) => { if(a.r !== 'nc' || !ITEM_INDEX[id]) return;
+      const x = itens.get(id) || {n: 0, parques: new Set()}; x.n++; x.parques.add(ev); itens.set(id, x);
+      vistos.set(id, (vistos.get(id) || 0) + 1); }));
+    vistos.forEach((n, id) => { if(n >= 2) reinc.push({ev, id, n}); }); });
+  const topItens = [...itens.entries()].sort((a, b) => b[1].n - a[1].n).slice(0, 8);
+  const cat = new Map(); D.acoes.forEach(a => cat.set(a.eixo || '', (cat.get(a.eixo || '') || 0) + 1));
+  const maxI = Math.max(1, ...topItens.map(x => x[1].n));
+  return `<div class="grid2">
+    <section class="card"><div class="card-h"><h2>Itens mais reprovados</h2><span class="note">não conformidades no período</span></div>
+      ${topItens.length ? `<div class="bars">${topItens.map(([id, x]) => `<div class="bar" title="${esc(ITEM_INDEX[id].t)}: ${x.n} vez(es) em ${x.parques.size} parque(s)"><span style="font-size:13px">${esc(ITEM_INDEX[id].t)}</span><div class="tr"><i style="width:${x.n / maxI * 100}%;background:var(--warn)"></i></div><b>${x.n}</b></div>`).join('')}</div>` : `<div class="empty">${ic('check')}Nenhuma não conformidade no período.</div>`}
+    </section>
+    <section class="card"><div class="card-h"><h2>Reincidência</h2><span class="note">mesmo item reprovado em 2+ auditorias do parque</span></div>
+      ${reinc.length ? reinc.sort((a, b) => b.n - a.n).slice(0, 10).map(r => `<div class="rep-it"><span><b>${esc(evName(r.ev))}</b> · ${esc(ITEM_INDEX[r.id].t)}</span>${pill(r.n + ' vezes', 'bad')}</div>`).join('') : `<div class="empty">${ic('check')}Nenhuma reincidência encontrada.</div>`}
+      <div class="sec-t" style="margin-top:14px">Ações por categoria</div>
+      ${cat.size ? [...cat.entries()].sort((a, b) => b[1] - a[1]).map(([k, n]) => `<div class="rep-it"><span>${esc(CATEG[k] || 'Sem categoria')}</span><b class="num">${n}</b></div>`).join('') : '<p class="note">Nenhuma ação corretiva.</p>'}
+    </section></div>`;
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-act]'); if(!b) return; const a = b.dataset.act;
+  if(a === 'dr'){ S.dr = b.dataset.v; renderPainel(); }
+  else if(a === 'df-limpar'){ S.df = {}; renderPainel(); }
+  else if(a === 'df-sit'){ S.df = {...(S.df || {}), sit: (S.df || {}).sit === b.dataset.v ? '' : b.dataset.v}; renderPainel(); }
+  else if(a === 'dash-ir'){ S.pf = {status: b.dataset.v}; S.ppage = 1; go('pendencias'); }
+  else if(a === 'dash-dep'){ S.pf = {dep: b.dataset.v}; S.ppage = 1; go('pendencias'); }
+});
+document.addEventListener('change', e => { const t = e.target; if(!t.dataset) return;
+  if(t.dataset.df){ S.df = {...(S.df || {}), [t.dataset.df]: t.value}; renderPainel(); }
+  else if(t.dataset.dpq !== undefined){ S.dpq = t.value; renderPainel(); } });
 
 init();
 </script>
