@@ -47,10 +47,10 @@ Resultado: 7 roteiros, todos passando, sem erros de JavaScript.
 
 No banco real: regras de acesso de auditor e master conferidas após cada migration, em transações sem gravação.
 
-## Pendências suas
-1. Autorizar a publicação (levar `pex-2.0` para `main`).
-2. Ligar **Leaked password protection** no Supabase.
-3. Revogar o token do Netlify colado no chat e, se quiser, apagar o site antigo `pex-eventokids`.
+## Situação final
+1. Publicado em `main` em 11/11/2026 (versão `pex-v13`).
+2. Leaked password protection: indisponível no plano gratuito do Supabase.
+3. Site antigo do Netlify apagado; falta só revogar o token no painel do Netlify.
 
 ## Limitações conhecidas
 - Notificações aparecem dentro do app (não há push no celular com o app fechado).

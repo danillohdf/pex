@@ -34,7 +34,7 @@ O painel do Supabase lista 14 funções "SECURITY DEFINER" que usuários logados
 | `pex_papel`, `pex_ativo`, `pex_admin`, `pex_master`, `pex_visita_editavel` | Só respondem sobre o próprio usuário (usadas pelas regras de acesso) |
 | `pex_notif_lidas` | Só marca as notificações do próprio usuário |
 
-## O que fica para você fazer no painel do Supabase
+## Configurações do painel do Supabase
 
-1. **Authentication › Attack Protection › Leaked password protection**: ligar.
-2. **Revogar o token do Netlify** que foi colado no chat no início do projeto (app.netlify.com › User settings › Applications › Personal access tokens) e, se não for mais usar, apagar o site antigo `pex-eventokids` (ainda mostra a versão antiga).
+- **Leaked password protection** (bloquear senhas vazadas): só existe nos planos pagos (Pro em diante). No plano gratuito fica desligado; o Supabase recusa ativar.
+- Token do Netlify: o site `pex-eventokids` foi apagado em 11/11/2026. O token pessoal usado na publicação antiga deve ser revogado no painel do Netlify (User settings › Applications › Personal access tokens).

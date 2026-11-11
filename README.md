@@ -38,7 +38,7 @@ Rodar sempre na ordem. Todas são compatíveis com os dados existentes e nenhuma
 Em **Authentication**:
 - **Sign In / Providers › Email**: deixe **Confirm email** desligado. A liberação de cada pessoa é feita pela administração dentro do app.
 - **URL Configuration › Site URL**: `https://danillohdf.github.io/pex/` (necessário para "Esqueci a senha").
-- **Attack Protection › Leaked password protection**: recomendado ligar (bloqueia senhas que já vazaram na internet).
+- **Leaked password protection** (bloquear senhas vazadas): só existe nos planos pagos do Supabase (Pro em diante). No plano gratuito fica desligado.
 
 A chave anon pode ficar no app: quem protege os dados são as regras do banco. **Nunca** coloque a chave `service_role` em nenhum arquivo do app.
 
