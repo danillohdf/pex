@@ -533,3 +533,30 @@ details.filtros>summary{padding:13px 18px}
 .tl-i:last-child::before{display:none}
 .tl-d{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--surface-3);color:var(--ink-2);position:relative;z-index:1}
 .tl-i.ok .tl-d{background:var(--ok-bg);color:var(--ok)} .tl-i.bad .tl-d{background:var(--bad-bg);color:var(--bad)}
+
+/* ---------- 23. Notificações ---------- */
+.nlist{display:grid;gap:8px;max-width:820px}
+.nitem{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;border:1px solid var(--line);border-radius:var(--r-lg);padding:12px 14px;background:var(--surface);color:inherit;position:relative}
+.nitem:hover{border-color:var(--line-2);box-shadow:var(--sh-2)}
+.nitem.nova{background:color-mix(in srgb,var(--brand-50) 55%,var(--surface));border-color:var(--brand-100)}
+.nitem .u{display:grid;gap:2px;min-width:0;flex:1}
+.nitem .u b{font-size:14.5px} .nitem .u>span:not(.note){font-size:13.5px;color:var(--ink-2)}
+.nic{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--surface-3);color:var(--ink-2);flex:none}
+.nic.bad{background:var(--bad-bg);color:var(--bad)} .nic.warn{background:var(--warn-bg);color:var(--warn)} .nic.ok{background:var(--ok-bg);color:var(--ok)}
+.ndot{width:9px;height:9px;border-radius:50%;background:var(--brand);flex:none;margin-top:6px}
+
+/* ---------- 24. Indicador de conexão ---------- */
+.net{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);border-radius:var(--r-pill);padding:4px 10px;font-size:12px;font-weight:650;color:var(--ink-2);white-space:nowrap;min-height:30px}
+.net-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.net[data-st="off"]{background:var(--warn-bg);border-color:transparent;color:var(--warn)} .net[data-st="off"] .net-dot{background:var(--warn)}
+.net[data-st="pend"] .net-dot,.net[data-st="sync"] .net-dot{background:var(--warn)}
+.net[data-st="err"]{background:var(--bad-bg);border-color:transparent;color:var(--bad)} .net[data-st="err"] .net-dot{background:var(--bad)}
+@media (prefers-reduced-motion:no-preference){ .net[data-st="sync"] .net-dot{animation:pulso 1s ease-in-out infinite} @keyframes pulso{50%{opacity:.3}} }
+body:not(.logado) .net{display:none}
+.appbar .net{margin-left:auto} .appbar .logo{margin-right:0}
+@media (max-width:420px){ .appbar .net .net-t{max-width:120px;overflow:hidden;text-overflow:ellipsis} }
+@media (min-width:768px){
+  .side-net{width:100%;justify-content:flex-start;border-radius:var(--r-sm);padding:6px 12px;margin-bottom:4px;position:relative}
+  body.side-c:not(.side-over) .side-net{justify-content:center;padding:6px 0}
+  body.side-c:not(.side-over) .side-net .net-t{display:none}
+}

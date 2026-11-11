@@ -36,6 +36,8 @@
     <button class="tab" type="button" data-act="tab" data-v="relatorios" data-tip="Relatórios" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-envio"/></svg><span class="lbl">Relatórios</span></button>
   </nav>
   <div class="side-bottom">
+    <button type="button" class="net side-net" data-act="net" data-tip="Conexão" aria-live="polite"><span class="net-dot"></span><span class="net-t lbl">Online</span></button>
+    <button class="tab" type="button" data-act="tab" data-v="notificacoes" data-tip="Notificações" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-sino"/></svg><span class="lbl">Notificações</span><span class="ct ct-notif" hidden>0</span></button>
     <button class="tab" type="button" data-act="tab" data-v="usuarios" data-tip="Configurações" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-cfg"/></svg><span class="lbl">Configurações</span><span class="ct soft ct-usr" hidden>0</span></button>
     <button class="side-user" type="button" data-act="conta" data-tip="Meu perfil" style="position:relative"><span class="avatar side-av" aria-hidden="true">··</span><span class="u"><b class="side-nome">—</b><span class="side-papel"></span></span></button>
     <button class="tab" type="button" data-act="sair" data-tip="Sair"><svg class="ic" aria-hidden="true"><use href="#i-sair"/></svg><span class="lbl">Sair</span></button>
@@ -46,6 +48,7 @@
 <header class="appbar">
   <div class="wrap appbar-in">
     <a class="logo" href="#painel" aria-label="Plataforma PEX, início"><span class="mark"><b>PEX</b></span><span class="logo-t"><b>Plataforma PEX</b><small>Evento Kids · Excelência e Auditoria</small></span></a>
+    <button type="button" class="net" data-act="net" aria-live="polite"><span class="net-dot"></span><span class="net-t">Online</span></button>
     <button type="button" class="avatar" data-act="conta" id="btn-conta" aria-label="Meu perfil">··</button>
   </div>
 </header>
@@ -58,7 +61,8 @@
   <button class="tab" type="button" data-act="tab" data-v="visitas" aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-visitas"/></svg>Auditorias</button>
   <button class="tab" type="button" data-act="tab" data-v="validacao" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-validacao"/></svg>Validação<span class="ct ct-val" hidden>0</span></button>
   <button class="tab" type="button" data-act="tab" data-v="pendencias" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-pend"/></svg>Pendências<span class="ct ct-pend" hidden>0</span></button>
-  <button class="tab" type="button" data-act="mais" data-v="mais" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-mais"/></svg>Mais<span class="ct soft ct-usr" hidden>0</span></button>
+  <button class="tab" type="button" data-act="tab" data-v="notificacoes" data-auditor aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-sino"/></svg>Avisos<span class="ct ct-notif" hidden>0</span></button>
+  <button class="tab" type="button" data-act="mais" data-v="mais" data-admin hidden aria-selected="false"><svg class="ic" aria-hidden="true"><use href="#i-mais"/></svg>Mais<span class="ct ct-notif" hidden>0</span></button>
 </nav>
 
 <div id="foot-slot"></div>
@@ -269,6 +273,9 @@ async function init(){
   document.querySelectorAll('.side-papel').forEach(el => el.textContent = (PAPEL[perfil.papel] || [''])[0]);
   S.me.master = perfil.papel === 'master';
   document.querySelectorAll('[data-admin]').forEach(el => el.hidden = !S.me.admin);
+  document.querySelectorAll('[data-auditor]').forEach(el => el.hidden = !!S.me.admin);
+  S.notifs = null; carregarNotif(); PEX.notif.assinar(S.me.id, n => { S.notifs = [n, ...(S.notifs || [])]; contarNotif(); if(!S.edit && !S.rep && S.tab === 'notificacoes') renderNotificacoes(); else if(!S.edit) toast(n.titulo); });
+  document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') carregarNotif(); });
   if(S.me.admin){
     contarPendentes(); carregarAcoes();
     PEX.acoes.assinar(p => { if(p.new && p.new.id){ S.acoes.set(p.new.id, p.new); contarAcoes(); refresh(true); } });
@@ -307,14 +314,14 @@ function updateCounts(){
 /* ===================== Rotas ===================== */
 function route(){
   if(S.edit && S.db){ clearTimeout(S.saveT); const e = S.edit; S.db.doc('visitas/' + e.id).set(clone(e.d)).catch(() => toast('A última alteração da visita não foi salva.')); }
-  const h = location.hash.slice(1); S.tab = ['painel','visitas'].concat(S.me.admin ? ['validacao','pendencias','parques','relatorios','usuarios'] : []).includes(h) ? h : 'painel'; if(S.tab === 'parques' && !S.manterParque) S.parque = null; S.manterParque = false; S.edit = null; S.rep = null; render(); }
+  const h = location.hash.slice(1); S.tab = ['painel','visitas','notificacoes'].concat(S.me.admin ? ['validacao','pendencias','parques','relatorios','usuarios'] : []).includes(h) ? h : 'painel'; if(S.tab === 'parques' && !S.manterParque) S.parque = null; S.manterParque = false; S.edit = null; S.rep = null; render(); }
 window.addEventListener('hashchange', route);
 function go(tab){ if(location.hash.slice(1) === tab){ route(); } else location.hash = tab; }
 
 function render(){
   document.body.classList.remove('side-over');
   document.body.classList.toggle('editing', !!S.edit);
-  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String((b.dataset.v === S.tab || (b.dataset.v === 'mais' && ['parques','relatorios','notificacoes','usuarios'].includes(S.tab))) && !S.edit)));
+  document.querySelectorAll('.tab').forEach(b => b.setAttribute('aria-selected', String((b.dataset.v === S.tab || (b.dataset.v === 'mais' && ['parques','relatorios','usuarios'].includes(S.tab)) || (b.dataset.v === 'mais' && S.tab === 'notificacoes' && S.me.admin && b.closest('.tabbar'))) && !S.edit)));
   $('#foot-slot').innerHTML = '';
   if(S.edit) return renderEditor();
   if(S.rep) return renderReport();
@@ -325,6 +332,7 @@ function render(){
   else if(S.tab === 'pendencias') renderPendencias();
   else if(S.tab === 'parques') renderParques();
   else if(S.tab === 'relatorios') renderRelatorios();
+  else if(S.tab === 'notificacoes') renderNotificacoes();
   else renderValidacao();
 }
 
@@ -451,7 +459,7 @@ async function flush(){
   if(!S.edit) return;
   if(S.saving){ S.pending = true; return; }
   S.saving = true; const {id, d} = S.edit;
-  try{ await S.db.doc('visitas/' + id).set(clone(d)); if(S.edit) S.edit.salvo = Date.now(); setSaved('Salvo ' + fdt(Date.now()).slice(6)); }
+  try{ const r = await S.db.doc('visitas/' + id).set(clone(d)); if(S.edit) S.edit.salvo = Date.now(); setSaved(r && r.pendente ? 'Salvo no aparelho' : 'Salvo ' + fdt(Date.now()).slice(6)); }
   catch(err){ setSaved('Não salvo'); toast(err && err.code === 'quota_exceeded' ? 'O banco do PEX está cheio. Avise a administração.' : 'Não foi possível salvar. Verifique a conexão; suas respostas continuam na tela.'); }
   S.saving = false; if(S.pending){ S.pending = false; flush(); }
 }
@@ -640,7 +648,7 @@ async function enviar(){
   const d = S.edit.d; if(!aceite(d).every(c => c[1])) return;
   d.enviadoEm = Date.now();
   clearTimeout(S.saveT);
-  try{ await S.db.doc('visitas/' + S.edit.id).set(clone(d)); const id = S.edit.id; S.edit = null; toast('Auditoria enviada para validação.', 'ok'); openReport(id); }
+  try{ const r = await S.db.doc('visitas/' + S.edit.id).set(clone(d)); const id = S.edit.id; S.edit = null; toast(r && r.pendente ? 'Sem internet: a auditoria está guardada no aparelho e será enviada sozinha quando a conexão voltar.' : 'Auditoria enviada para validação.', r && r.pendente ? '' : 'ok'); openReport(id); }
   catch(err){ d.enviadoEm = null; toast('Não foi possível enviar. Verifique a conexão e tente de novo.'); }
 }
 
@@ -2102,6 +2110,67 @@ document.addEventListener('click', ev => {
 document.addEventListener('keydown', e => { const r = e.target.closest && e.target.closest('tr.click[data-act="parque-abrir"]'); if(r && (e.key === 'Enter' || e.key === ' ')){ e.preventDefault(); r.click(); } });
 document.addEventListener('input', e => { const t = e.target; if(t.dataset && t.dataset.plq !== undefined){ S.plq = t.value; const pos = t.selectionStart; renderParques(); const n = $('#plq'); if(n){ n.focus(); n.setSelectionRange(pos, pos); } } });
 document.addEventListener('change', e => { const t = e.target; if(t.dataset && t.dataset.plsoc !== undefined){ S.plsoc = t.value; renderParques(); } });
+
+/* ===================== Fase 6 · Notificações ===================== */
+const NOTIF_IC = {auditoria_enviada: 'visitas', auditoria_devolvida: 'alerta', critica: 'alerta', acao_nova: 'flag', acao_aguardando: 'pend', correcao_aprovada: 'check', correcao_rejeitada: 'x', acao_atrasada: 'relogio', acao_vencendo: 'relogio'};
+const NOTIF_CLS = {critica: 'bad', correcao_rejeitada: 'bad', acao_atrasada: 'bad', auditoria_devolvida: 'warn', acao_vencendo: 'warn', acao_aguardando: 'warn', correcao_aprovada: 'ok'};
+function haQuanto(ms){ const m = Math.round((Date.now() - ms) / 6e4); if(m < 1) return 'agora'; if(m < 60) return 'há ' + m + ' min'; const h = Math.round(m / 60); if(h < 24) return 'há ' + h + ' h'; const d = Math.round(h / 24); return d === 1 ? 'ontem' : d < 30 ? 'há ' + d + ' dias' : fd(ms); }
+async function carregarNotif(){
+  try{ if(S.me.admin) await PEX.notif.prazos().catch(() => {}); S.notifs = await PEX.notif.listar(); contarNotif(); if(S.tab === 'notificacoes' && !S.edit && !S.rep) renderNotificacoes(); }catch(e){}
+}
+function contarNotif(){ const n = (S.notifs || []).filter(x => !x.lida_em).length; setCt('ct-notif', n, n); }
+function renderNotificacoes(){
+  const l = S.notifs || []; const so = S.nfilt === 'nao';
+  const vis = so ? l.filter(x => !x.lida_em) : l; const nl = l.filter(x => !x.lida_em).length;
+  $('#main').innerHTML = `<div class="stack">
+    ${pageHead('Notificações', S.me.admin ? 'Auditorias enviadas e devolvidas, ocorrências críticas, ações novas, correções para validar e prazos.' : 'Avisos sobre as suas auditorias.', nl ? `<button class="btn" type="button" data-act="notif-todas">${ic('check')}Marcar todas como lidas</button>` : '')}
+    <div class="segtog" role="group" aria-label="Quais notificações mostrar"><button type="button" data-act="nfilt" data-v="todas" aria-pressed="${!so}">Todas</button><button type="button" data-act="nfilt" data-v="nao" aria-pressed="${so}">Não lidas${nl ? ' · ' + nl : ''}</button></div>
+    ${S.notifs == null ? '<div class="skel" style="height:200px"></div>' : vis.length ? `<div class="nlist">${vis.map(n => `<button type="button" class="nitem${n.lida_em ? '' : ' nova'}" data-act="notif-abrir" data-id="${n.id}">
+        <span class="nic ${NOTIF_CLS[n.tipo] || ''}">${ic(NOTIF_IC[n.tipo] || 'sino')}</span>
+        <span class="u"><b>${esc(n.titulo)}</b><span>${esc(n.texto)}</span><span class="note" style="margin:2px 0 0">${haQuanto(new Date(n.criada_em).getTime())}</span></span>
+        ${n.lida_em ? '' : '<span class="ndot" aria-label="Não lida"></span>'}</button>`).join('')}</div>`
+      : `<div class="empty">${ic('sino')}<b>${so ? 'Nenhuma notificação não lida' : 'Nenhuma notificação ainda'}</b>Os avisos aparecem aqui assim que acontecem.</div>`}
+  </div>`;
+}
+async function abrirNotif(id){
+  const n = (S.notifs || []).find(x => String(x.id) === String(id)); if(!n) return;
+  if(!n.lida_em){ n.lida_em = new Date().toISOString(); contarNotif(); PEX.notif.marcar([n.id]).catch(() => {}); }
+  if(n.alvo_tipo === 'visita' && S.visitas.get(n.alvo_id)){ const v = S.visitas.get(n.alvo_id); if(editavel(v)) openEditor(n.alvo_id, v); else openReport(n.alvo_id); }
+  else if(n.alvo_tipo === 'acao' && S.me.admin){ go('pendencias'); setTimeout(() => { if(S.acoes.get(n.alvo_id)) acaoSheet(n.alvo_id); }, 150); }
+  else renderNotificacoes();
+}
+document.addEventListener('click', ev => {
+  const b = ev.target.closest('[data-act]'); if(!b) return; const a = b.dataset.act;
+  if(a === 'notif-abrir') abrirNotif(b.dataset.id);
+  else if(a === 'nfilt'){ S.nfilt = b.dataset.v; renderNotificacoes(); }
+  else if(a === 'notif-todas'){ (S.notifs || []).forEach(n => { if(!n.lida_em) n.lida_em = new Date().toISOString(); }); contarNotif(); renderNotificacoes(); PEX.notif.marcar(null).then(() => toast('Todas marcadas como lidas.', 'ok')).catch(() => toast('Não foi possível marcar. Tente de novo.', 'bad')); }
+});
+
+
+/* ===================== Fase 6 · Indicador de conexão e sincronização ===================== */
+function textoNet(e){
+  if(!e.online) return ['off', e.pendentes ? `Offline · ${e.pendentes} pendente(s)` : 'Offline'];
+  if(e.sincronizando) return ['sync', 'Sincronizando…'];
+  if(e.erro) return ['err', 'Erro de sincronização'];
+  if(e.pendentes) return ['pend', `${e.pendentes} alteração(ões) pendente(s)`];
+  return ['ok', e.ultimo ? 'Sincronizado' : 'Online'];
+}
+PEX.offline && PEX.offline.assinar(e => {
+  const [cls, t] = textoNet(e); S.net = e;
+  document.querySelectorAll('.net').forEach(b => { b.dataset.st = cls; b.querySelector('.net-t').textContent = t; b.title = t; b.dataset.tip = t; });
+  if(S.edit && !e.online) setSaved(e.pendentes ? 'Salvo no aparelho' : 'Offline');
+});
+PEX.offline && PEX.offline.aoRemapear((id, mapa) => {
+  const troca = x => typeof x === 'string' ? (mapa[x] || x) : Array.isArray(x) ? x.map(troca) : x && typeof x === 'object' ? Object.fromEntries(Object.entries(x).map(([k, v]) => [k, troca(v)])) : x;
+  if(S.edit && S.edit.id === id) S.edit.d = troca(S.edit.d);
+});
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest('[data-act="net"]'); if(!b) return;
+  const e = PEX.offline.estado();
+  if(!e.online){ toast(e.pendentes ? `Sem internet. ${e.pendentes} auditoria(s) guardada(s) no aparelho serão enviadas quando a conexão voltar.` : 'Sem internet. Você pode continuar preenchendo; tudo fica guardado no aparelho.'); return; }
+  toast('Sincronizando…'); const r = await PEX.offline.sincronizar();
+  toast(r.erro ? 'Erro de sincronização: ' + r.erro : r.pendentes ? `${r.pendentes} alteração(ões) ainda pendente(s).` : 'Tudo sincronizado.', r.erro ? 'bad' : 'ok');
+});
 
 init();
 </script>
