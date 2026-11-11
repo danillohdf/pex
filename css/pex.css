@@ -317,6 +317,13 @@ details.fold .fold-b{padding:0 18px 18px}
 .ed-top h1{font-size:clamp(20px,4.6vw,26px)}
 .ed-meta{display:flex;gap:4px 14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:4px;align-items:center}
 .ed-meta span{display:inline-flex;align-items:center;gap:5px}
+.ed-meta span.ed-at{display:block}
+/* relatório no celular: voltar e PDF na primeira linha, título e dados com a largura toda */
+@media (max-width:640px){
+  .ed-top:has(>[data-act=pdf-aud]){flex-wrap:wrap}
+  .ed-top:has(>[data-act=pdf-aud])>div{order:2;flex:1 1 100% !important}
+  .ed-top>[data-act=pdf-aud]{margin-left:auto}
+}
 .progress{display:grid;gap:8px}
 .progress .lbl{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted);font-weight:600}
 .progress .lbl b{color:var(--ink);font-size:14.5px;font-weight:700}

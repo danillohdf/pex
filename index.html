@@ -722,7 +722,7 @@ function renderReport(){
     <div class="ed-top">
       <button class="btn icon" type="button" data-act="fechar" id="btn-fechar-rep" aria-label="Voltar" title="Voltar">${ic('left')}</button>
       <div style="min-width:0;flex:1"><div class="row" style="gap:8px;margin-bottom:4px">${pill(ST[st][0], ST[st][1])}${pill(sit, sitCls(sit))}</div><h1>${esc(evName(v.evento))}</h1>
-        <div class="ed-meta"><span class="mono">${esc(v.codigo)}</span><span>${ic('user','sm')} ${esc(quem(v))}</span><span>Líder: ${esc(v.lider || '—')}</span>${(v.atendentes||[]).filter(Boolean).length ? `<span>Atendimento: <b style="color:var(--ink)">${esc(v.atendentes.filter(Boolean).join(', '))}</b></span>` : ''}<span>${ic('envio','sm')} ${fdt(v.enviadoEm)}</span></div></div>
+        <div class="ed-meta"><span class="mono">${esc(v.codigo)}</span><span>${ic('user','sm')} ${esc(quem(v))}</span><span>Líder: ${esc(v.lider || '—')}</span>${(v.atendentes||[]).filter(Boolean).length ? `<span class="ed-at">Atendimento: <b style="color:var(--ink)">${esc(v.atendentes.filter(Boolean).join(', '))}</b></span>` : ''}<span>${ic('envio','sm')} ${fdt(v.enviadoEm)}</span></div></div>
       ${st !== 'rascunho' ? `<button class="btn" type="button" data-act="pdf-aud" data-id="${esc(v._id)}">${ic('envio')}Gerar PDF</button>` : ''}
     </div>
     ${st === 'devolvida' && w.obs ? `<div class="banner warn"><b>Devolvida ao auditor:</b> ${esc(w.obs)}</div>` : ''}

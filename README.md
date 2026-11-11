@@ -16,6 +16,7 @@ Endereço publicado: **https://danillohdf.github.io/pex/** (branch `main`, vers�
 | `supabase/001` a `009` | Migrations SQL, na ordem em que foram aplicadas (tabela abaixo) |
 | `manifest.webmanifest`, `sw.js`, `icons/` | Instalação como app e abertura sem internet |
 | `docs/` | Diagnóstico, design system, Central de Pendências, segurança e relatório da versão 2.0 |
+| `docs/Manual-do-Auditor-PEX.pdf` | Manual do auditor (link: danillohdf.github.io/pex/docs/Manual-do-Auditor-PEX.pdf). Fonte em `docs/manual-fonte/` |
 
 ## Migrations do banco
 

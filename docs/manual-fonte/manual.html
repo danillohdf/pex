@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<title>Manual do Auditor · Plataforma PEX</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<style>
+:root{--brand:#0A6B5E;--brand-50:#E7F3F1;--ink:#14201E;--muted:#5B6B68;--line:#DCE4E2;--warn:#C05A0B;--warn-50:#FDF1E6;--bad:#B42318;--bad-50:#FDECEA;--ok:#1E7B45}
+@page{size:A4;margin:14mm 14mm 16mm}
+*{box-sizing:border-box}
+body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;color:var(--ink);font-size:10.5pt;line-height:1.5;margin:0}
+h1,h2,h3{line-height:1.2;margin:0}
+h2{font-size:17pt;color:var(--brand);margin:0 0 3mm;padding-top:1mm}
+h3{font-size:12pt;margin:0 0 1.5mm}
+p{margin:0 0 2.2mm}
+ul,ol{margin:0 0 2.5mm;padding-left:5mm}
+li{margin-bottom:1mm}
+b{font-weight:700}
+.capa{height:262mm;display:flex;flex-direction:column;justify-content:space-between;page-break-after:always}
+.capa .logo{width:22mm;height:22mm;border-radius:6mm;background:var(--brand);color:#fff;font-weight:800;font-size:17pt;display:flex;align-items:center;justify-content:center}
+.capa .eyebrow{font-size:9pt;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);font-weight:700;margin-top:30mm}
+.capa h1{font-size:38pt;margin:4mm 0 4mm;letter-spacing:-.02em}
+.capa .sub{font-size:13pt;color:var(--muted);max-width:140mm}
+.capa .link{margin-top:10mm;display:inline-block;background:var(--brand-50);border:1px solid #BFDCD6;border-radius:4mm;padding:4mm 6mm;font-size:13pt;font-weight:700;color:var(--brand)}
+.capa .rod{font-size:9pt;color:var(--muted);border-top:1px solid var(--line);padding-top:4mm}
+.sec{page-break-before:always}
+.bloco{display:grid;grid-template-columns:1fr 58mm;gap:7mm;align-items:start;margin:0 0 6mm;page-break-inside:avoid;break-inside:avoid}
+.bloco.dois{grid-template-columns:1fr 50mm 50mm}
+.bloco.so{display:block}
+.fig{margin:0}
+.fig img{width:100%;border:1px solid var(--line);border-radius:3mm;display:block}
+.fig figcaption{font-size:8pt;color:var(--muted);margin-top:1.5mm;text-align:center}
+.box{border-radius:3mm;padding:3mm 4mm;margin:2mm 0 3mm;font-size:10pt;page-break-inside:avoid}
+.box.dica{background:var(--brand-50);border:1px solid #BFDCD6}
+.box.atencao{background:var(--warn-50);border:1px solid #F3C99F}
+.box.perigo{background:var(--bad-50);border:1px solid #F2B8B5}
+.box b:first-child{display:block;margin-bottom:.8mm}
+.num{display:inline-flex;width:6.5mm;height:6.5mm;border-radius:50%;background:var(--brand);color:#fff;font-weight:800;font-size:9.5pt;align-items:center;justify-content:center;margin-right:2mm;vertical-align:1px}
+table{width:100%;border-collapse:collapse;font-size:9.6pt;margin:1mm 0 3mm;page-break-inside:avoid}
+th,td{border-bottom:1px solid var(--line);padding:1.8mm 2mm;text-align:left;vertical-align:top}
+th{font-size:8.5pt;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.tag{display:inline-block;border-radius:10mm;padding:.4mm 2.6mm;font-size:8.6pt;font-weight:700;white-space:nowrap}
+.t-c{background:#E3F4EA;color:var(--ok)} .t-nc{background:var(--bad-50);color:var(--bad)} .t-na{background:#EEF1F0;color:var(--muted)}
+.t-info{background:#E6EEFB;color:#2453A6} .t-warn{background:var(--warn-50);color:var(--warn)}
+.indice{columns:2;column-gap:10mm;font-size:11pt}
+.indice div{break-inside:avoid;padding:1.4mm 0;border-bottom:1px dotted var(--line)}
+.small{font-size:9pt;color:var(--muted)}
+</style></head><body>
+
+<section class="capa">
+  <div>
+    <div class="logo">PEX</div>
+    <div class="eyebrow">Evento Kids · Programa de Excelência e Auditoria</div>
+    <h1>Manual do Auditor</h1>
+    <p class="sub">Passo a passo para criar o seu acesso, fazer as auditorias nos parques e lojas pelo celular e enviar para a administração validar.</p>
+    <div class="link">danillohdf.github.io/pex</div>
+  </div>
+  <div>
+    <h3 style="margin-bottom:3mm">Neste manual</h3>
+    <div class="indice">
+      <div>1. O que é o app</div><div>2. Criar o seu acesso</div><div>3. Instalar no celular</div><div>4. Conhecendo as telas</div>
+      <div>5. Começar uma auditoria</div><div>6. Como responder</div><div>7. As 8 etapas, uma a uma</div><div>8. Enviar a auditoria</div>
+      <div>9. Depois de enviar</div><div>10. Auditoria devolvida</div><div>11. Avisos</div><div>12. Sem internet</div><div>13. Dúvidas comuns</div>
+    </div>
+    <p class="rod">Versão 2.0 · novembro de 2026</p>
+  </div>
+</section>
+
+<!-- 1 -->
+<section>
+  <h2>1. O que é o app</h2>
+  <p>A <b>Plataforma PEX</b> é onde você registra a auditoria de cada parque ou loja: como foi o atendimento, a exposição dos produtos, o estoque, a limpeza e a estrutura. Tudo com fotos. Quando você termina e envia, a administração analisa, valida ou devolve para correção, e transforma cada problema encontrado em uma ação para o parque resolver.</p>
+  <p>O app funciona no navegador do celular e pode ser instalado na tela inicial, como um aplicativo comum. Tudo é salvo automaticamente enquanto você preenche, inclusive sem internet.</p>
+  <h3 style="margin-top:4mm">Palavras que você vai ver</h3>
+  <table>
+    <tr><th style="width:36mm">Termo</th><th>O que significa</th></tr>
+    <tr><td><b>Auditoria</b></td><td>A visita a um parque ou loja. Tem 8 etapas e gera um código, por exemplo <b>PEX-261111-MVME</b>.</td></tr>
+    <tr><td><b>Etapa</b></td><td>Cada parte da auditoria: Cliente oculto, Identificação, Exposição, Estoque, Limpeza, Estrutura, Ocorrências e Enviar.</td></tr>
+    <tr><td><b>Item</b></td><td>Cada ponto a conferir dentro de uma etapa (ex.: "Lixeiras", "Extintor"). Você responde <span class="tag t-c">Conforme</span> <span class="tag t-nc">Não conforme</span> ou <span class="tag t-na">N/A</span>.</td></tr>
+    <tr><td><b>Eixo e nota</b></td><td>São 4 eixos: Atendimento, Organização, Auditoria (estoque) e Estrutura. Cada um recebe uma nota de 0 a 5 com justificativa.</td></tr>
+    <tr><td><b>Índice PEX</b></td><td>A nota geral do parque, calculada a partir das notas dos eixos.</td></tr>
+    <tr><td><b>Ocorrência</b></td><td>Um problema que precisa de correção. Você descreve onde é, o que é e a gravidade. Depois a administração cria a ação para resolver.</td></tr>
+    <tr><td><b>Cliente oculto</b></td><td>A primeira parte da visita, em que você chega como cliente comum, sem dizer que é auditor.</td></tr>
+  </table>
+</section>
+
+<!-- 2 -->
+<section class="sec">
+  <h2>2. Criar o seu acesso</h2>
+  <div class="bloco">
+    <div>
+      <p><span class="num">1</span>Abra o link que você recebeu: <b>danillohdf.github.io/pex</b></p>
+      <p><span class="num">2</span>Na tela de entrada, toque em <b>Criar acesso</b> (embaixo, à esquerda).</p>
+      <p><span class="num">3</span>Preencha:</p>
+      <ul>
+        <li><b>Nome completo</b>: é o nome que aparece nas suas auditorias.</li>
+        <li><b>E-mail</b>: use um e-mail seu, que você acessa.</li>
+        <li><b>Senha</b>: no mínimo <b>8 caracteres</b>. O olho ao lado mostra o que você digitou.</li>
+      </ul>
+      <p><span class="num">4</span>Toque em <b>Criar acesso</b>.</p>
+      <div class="box dica"><b>Já tem acesso?</b>Use a tela <b>Entrar</b>, com o mesmo e-mail e senha. Se esqueceu a senha, toque em <b>Esqueci a senha</b> e siga o link que chega no seu e-mail.</div>
+    </div>
+    <figure class="fig"><img src="02-criar.png"><figcaption>Tela Criar acesso</figcaption></figure>
+  </div>
+  <div class="bloco">
+    <div>
+      <h3>Aguardando liberação</h3>
+      <p>Depois de criar o acesso, aparece a tela <b>"Quase lá"</b>. Isso é normal: por segurança, a administração do PEX precisa liberar cada pessoa antes do primeiro uso.</p>
+      <p>Avise a administração que você criou o acesso. Quando ela liberar, toque em <b>Já fui liberado</b> e o app abre.</p>
+      <div class="box atencao"><b>Ainda não liberou?</b>O botão só funciona depois que a administração mudar o seu cadastro para Auditor. Até lá, você continua nesta tela. Você pode fechar o app e voltar depois.</div>
+    </div>
+    <figure class="fig"><img src="03-aguardando.png"><figcaption>Esperando a liberação</figcaption></figure>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="sec">
+  <h2>3. Instalar no celular</h2>
+  <p>Instalar deixa o PEX com ícone na tela inicial, abre mais rápido e funciona melhor sem internet. Faça isso uma vez só.</p>
+  <table>
+    <tr><th style="width:40mm">Celular</th><th>Como instalar</th></tr>
+    <tr><td><b>iPhone</b> (Safari)</td><td>Abra o link no <b>Safari</b> › toque no botão <b>Compartilhar</b> (quadrado com seta para cima) › <b>Adicionar à Tela de Início</b> › <b>Adicionar</b>.</td></tr>
+    <tr><td><b>Android</b> (Chrome)</td><td>Abra o link no <b>Chrome</b> › toque no menu <b>⋮</b> (canto de cima) › <b>Instalar app</b> ou <b>Adicionar à tela inicial</b> › confirme.</td></tr>
+  </table>
+  <div class="box dica"><b>Dica</b>Depois de instalado, abra sempre pelo ícone <b>PEX</b> da tela inicial. Você continua conectado e não precisa digitar a senha toda vez.</div>
+
+  <h2 style="margin-top:8mm">4. Conhecendo as telas</h2>
+  <div class="bloco">
+    <div>
+      <p>Embaixo da tela ficam os três atalhos do auditor:</p>
+      <ul>
+        <li><b>Dashboard</b> (Meu painel): o resumo das <b>suas</b> auditorias, como índice médio, quantas foram aprovadas e quantas têm ocorrências abertas.</li>
+        <li><b>Auditorias</b>: onde você começa uma auditoria nova e vê todas as suas.</li>
+        <li><b>Avisos</b>: mensagens da administração sobre as suas auditorias. O número vermelho mostra quantas você ainda não leu.</li>
+      </ul>
+      <p>No alto, à direita:</p>
+      <ul>
+        <li><b>Indicador de conexão</b>: mostra se você está <b>Online</b>, <b>Offline</b>, ou se há alterações esperando para subir (veja o capítulo 12).</li>
+        <li><b>Suas iniciais</b>: abre o seu perfil, com o botão <b>Sair da conta</b>.</li>
+      </ul>
+      <p class="small">Você só vê as auditorias que você fez. As dos outros auditores não aparecem para você.</p>
+    </div>
+    <figure class="fig"><img src="25-painel.png"><figcaption>Meu painel</figcaption></figure>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="sec">
+  <h2>5. Começar uma auditoria</h2>
+  <div class="bloco">
+    <div>
+      <p><span class="num">1</span>Toque em <b>Auditorias</b> na barra de baixo.</p>
+      <p><span class="num">2</span>Em <b>Nova auditoria</b>, escolha o parque ou loja na lista.</p>
+      <p><span class="num">3</span>Toque em <b>Iniciar auditoria</b>.</p>
+      <div class="box atencao"><b>Comece já no local, como cliente</b>A auditoria abre na etapa <b>Cliente oculto</b>. Inicie quando estiver no parque, antes de falar com alguém. O horário de início e o horário em que você se identifica ficam registrados.</div>
+      <p>A auditoria aparece em <b>Minhas auditorias</b> com o selo <span class="tag">Em preenchimento</span>. Se você sair no meio, é só tocar nela para continuar de onde parou.</p>
+    </div>
+    <figure class="fig"><img src="05-nova-auditoria.png"><figcaption>Nova auditoria</figcaption></figure>
+  </div>
+  <div class="bloco">
+    <div>
+      <h3>A tela da auditoria</h3>
+      <ul>
+        <li><b>No topo</b>: nome do parque, código da auditoria e a barra das 8 etapas. As etapas concluídas ficam marcadas. Você pode tocar em qualquer etapa para ir direto a ela.</li>
+        <li><b>No meio</b>: as orientações da etapa, os itens a responder, as fotos e a nota.</li>
+        <li><b>No rodapé</b>: a seta para voltar, o aviso <b>Salvo</b> com o horário e o botão para a próxima etapa.</li>
+      </ul>
+      <figure class="fig" style="max-width:85mm;margin-top:3mm"><img src="11-rodape.png"><figcaption>Rodapé: tudo é salvo sozinho a cada resposta</figcaption></figure>
+      <div class="box dica" style="margin-top:4mm"><b>Não existe botão "Salvar"</b>Cada resposta é salva na hora. O rodapé mostra <b>Salvando…</b> e depois <b>Salvo</b> com o horário.</div>
+    </div>
+    <figure class="fig"><img src="06-editor-topo.png"><figcaption>Início da auditoria</figcaption></figure>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="sec">
+  <h2>6. Como responder</h2>
+  <div class="bloco">
+    <div>
+      <h3>Cada item tem três respostas</h3>
+      <table>
+        <tr><td style="width:30mm"><span class="tag t-c">Conforme</span></td><td>Está certo, como deveria estar.</td></tr>
+        <tr><td><span class="tag t-nc">Não conforme</span></td><td>Tem problema. <b>Escreva o que viu</b> na observação e <b>tire foto</b>.</td></tr>
+        <tr><td><span class="tag t-na">N/A</span></td><td>Não se aplica a este parque (ex.: não tem túnel de fitas). <b>Escreva o motivo</b>: N/A sem justificativa impede o envio.</td></tr>
+      </table>
+      <p>Para fotografar, toque no quadrado <b>Foto</b>: o celular abre a câmera (ou a galeria). Para apagar uma foto, toque no <b>×</b> em cima dela.</p>
+      <p>Em <span class="tag t-nc">Não conforme</span> aparece também o botão <b>Abrir ocorrência</b>. Use quando o problema precisar de correção: ele já leva o item, a observação e as fotos para a etapa Ocorrências.</p>
+    </div>
+    <div>
+      <figure class="fig"><img src="09-item-nc.png"><figcaption>Não conforme com observação e foto</figcaption></figure>
+      <figure class="fig" style="margin-top:3mm"><img src="19-item-na.png"><figcaption>N/A com o motivo</figcaption></figure>
+    </div>
+  </div>
+  <div class="bloco">
+    <div>
+      <h3>A nota do eixo (0 a 5)</h3>
+      <p>No fim das etapas Cliente oculto, Estoque, Limpeza e Estrutura você dá <b>uma nota para o eixo inteiro</b>, olhando tudo o que respondeu. Depois de tocar na nota, <b>escreva a justificativa</b>: ela é obrigatória.</p>
+      <table>
+        <tr><th>Nota</th><th>Quer dizer</th></tr>
+        <tr><td>0</td><td>Crítico: falha grave ou nada em ordem</td></tr>
+        <tr><td>1</td><td>Muito baixo: várias falhas, correção urgente</td></tr>
+        <tr><td>2</td><td>Abaixo: falhas frequentes</td></tr>
+        <tr><td>3</td><td>Adequado: atende, com pontos a melhorar</td></tr>
+        <tr><td>4</td><td>Muito bom: padrão elevado, desvios pontuais</td></tr>
+        <tr><td>5</td><td>Excelente: sem desvios</td></tr>
+      </table>
+    </div>
+    <figure class="fig"><img src="10-nota.png"><figcaption>Nota com justificativa</figcaption></figure>
+  </div>
+</section>
+
+<!-- 7 -->
+<section class="sec">
+  <h2>7. As 8 etapas, uma a uma</h2>
+  <div class="bloco">
+    <div>
+      <h3><span class="num">1</span>Cliente oculto</h3>
+      <p>Chegue como cliente comum, <b>sem se identificar</b>. Observe o atendimento e aplique os cenários padronizados (dúvida de preço, comparação de combos, pagamento, pedido fora da regra).</p>
+      <p>Em <b>Quem te atendeu?</b>, escreva o <b>nome completo</b> de cada colaboradora (pelo crachá, ou perguntando de forma natural). Se mais de uma pessoa atendeu, toque em <b>Adicionar outra pessoa</b>.</p>
+      <div class="box perigo"><b>Limite ético</b>Não ofereça propina, não peça venda sem registro, não induza desvio de dinheiro, não crie armadilhas repetidas nem constranja ninguém. Registre o que aconteceu de forma objetiva.</div>
+      <p>Responda os itens, dê a nota de <b>Atendimento</b> e toque em <b>Concluir cliente oculto</b>.</p>
+    </div>
+    <figure class="fig"><img src="07-quem-atendeu.png"><figcaption>Nome completo de quem atendeu</figcaption></figure>
+  </div>
+  <div class="bloco">
+    <div>
+      <h3><span class="num">2</span>Identificação</h3>
+      <p>Agora sim, apresente sua credencial e avise o responsável que a visita faz parte do PEX. Toque em <b>Encerrar cliente oculto e me identificar</b> (o horário fica registrado) e escreva o nome do <b>líder ou responsável presente</b>.</p>
+      <div class="box atencao"><b>Só se identifique depois de terminar o cliente oculto.</b>Depois de identificado, a etapa anônima não pode mais ser alterada.</div>
+    </div>
+    <figure class="fig"><img src="12-identificacao.png"><figcaption>Etapa 2</figcaption></figure>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="bloco">
+    <div>
+      <h3><span class="num">3</span>Exposição</h3>
+      <p>Confira balões, livros, chaveiros, slimes e demais produtos expostos: presença, variedade, organização e conservação.</p>
+      <p><b>Fotos obrigatórias</b> (o item fica verde quando tem foto):</p>
+      <ul><li><b>Vitrine</b>: foto frontal ampla.</li><li><b>Outros locais com produtos expostos</b>: todos os pontos de venda além da vitrine.</li></ul>
+      <p>Se houver outro local de exposição com problema, use <b>Adicionar outro local</b> (veja Limpeza).</p>
+    </div>
+    <figure class="fig"><img src="14-fotos-obrigatorias.png"><figcaption>Fotos obrigatórias concluídas</figcaption></figure>
+  </div>
+  <div class="bloco">
+    <div>
+      <h3><span class="num">4</span>Estoque</h3>
+      <p><b>Conte fisicamente</b> cada produto e preencha duas quantidades:</p>
+      <ul><li><b>Exposto</b>: o que está na vitrine e nos expositores.</li><li><b>Reserva</b>: o que está guardado.</li></ul>
+      <p>O app soma o <b>Total na loja</b>. Se um produto não existe no parque, coloque <b>0</b>. Produto que não está na lista? Toque em <b>Outros: produto que não está na lista</b> e escreva o nome.</p>
+      <p>Avarias, vencidos ou sem identificação: escreva na observação do produto e fotografe. Depois responda os itens de armazenamento, tire as 2 fotos obrigatórias (visão geral e detalhe) e dê a nota de <b>Auditoria</b>.</p>
+      <p class="small">Você não vê o saldo do sistema. A comparação com o sistema é feita pela administração.</p>
+    </div>
+    <figure class="fig"><img src="16-estoque-contagem.png"><figcaption>Contagem: exposto e reserva</figcaption></figure>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="bloco">
+    <div>
+      <h3><span class="num">5</span>Limpeza</h3>
+      <p>Registre a condição <b>no momento da visita</b>: pisos e carpete, móveis e balcão, computadores, lixeiras, áreas internas e áreas de apoio. Tire as 4 fotos obrigatórias (frente, recepção, piso, áreas internas) e dê a nota de <b>Organização</b>.</p>
+      <h3 style="margin-top:3mm">Outros locais</h3>
+      <p>Encontrou um ponto que não está na lista (ex.: "Cercado da entrada")? Toque em <b>Adicionar outro local</b>, escreva o nome do local, responda Conforme ou Não conforme, descreva e tire foto. Isso existe nas etapas Exposição, Limpeza e Estrutura.</p>
+      <div class="box dica"><b>Sujeira ou estrutura?</b>Sujeira conta em Limpeza (Organização). Desgaste que traz risco, como peça solta ou rasgo, vira ocorrência em Estrutura.</div>
+    </div>
+    <figure class="fig"><img src="17-outro-local.png"><figcaption>Outro local com problema</figcaption></figure>
+  </div>
+  <div class="bloco">
+    <div>
+      <h3><span class="num">6</span>Estrutura</h3>
+      <p>Inspeção <b>visual</b>, sem desmontar nada: fachada, recepção, cercados e portões, redes, ferragens, escorregadores, torres, piscina de bolinhas, tatames, fixação dos brinquedos, espumas, parte elétrica, quadro de distribuição, computadores, iluminação, extintor e saída de emergência.</p>
+      <p>Se o parque tem infláveis, marque <b>Este parque tem infláveis</b>, e aparecem os itens deles.</p>
+      <div class="box perigo"><b>Perigo imediato</b>Fio energizado ao alcance, estrutura instável, proteção rompida em área de queda ou inflável perdendo pressão: peça ao responsável para <b>suspender o uso da área</b>, acione a equipe técnica e registre uma <b>ocorrência crítica</b>. Não faça reparos você mesmo.</div>
+      <p>Dê a nota de <b>Estrutura</b>.</p>
+    </div>
+    <figure class="fig"><img src="18-estrutura.png"><figcaption>Etapa 6 com o alerta de perigo</figcaption></figure>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="bloco">
+    <div>
+      <h3><span class="num">7</span>Ocorrências</h3>
+      <p>Aqui ficam todos os problemas que precisam de correção: os que você abriu pelos itens (botão <b>Abrir ocorrência</b>) e outros que quiser acrescentar com <b>Nova ocorrência</b>.</p>
+      <p>Para cada ocorrência, preencha:</p>
+      <ul>
+        <li><b>Local exato</b> (ex.: "torre 2, lado do escorregador").</li>
+        <li><b>Descrição</b> do problema, com fatos, sem opinião.</li>
+        <li><b>Categoria do problema</b> e <b>Gravidade</b>: Baixa, Média, Alta ou <b>Crítica</b>.</li>
+        <li><b>Ação proposta</b>, se tiver uma sugestão.</li>
+        <li>Fotos (as do item já vêm junto).</li>
+      </ul>
+      <div class="box atencao"><b>Ocorrência crítica</b>Avise o responsável <b>na hora</b>, peça para suspender o uso da área e acione a equipe técnica. Depois marque a caixa vermelha <b>"Responsável comunicado na hora e uso da área suspenso; equipe técnica acionada"</b>. Sem ela, a auditoria não pode ser enviada.</div>
+    </div>
+    <figure class="fig"><img src="20-ocorrencias.png"><figcaption>Etapa 7</figcaption></figure>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="sec">
+  <h2>8. Enviar a auditoria</h2>
+  <div class="bloco dois">
+    <div>
+      <p>Na última etapa o app mostra <b>o que você registrou</b>, etapa por etapa. Toque em cada etapa para revisar. As que estiverem com pendência aparecem marcadas.</p>
+      <p>Embaixo fica a lista de conferência. O botão <b>Enviar para validação</b> só funciona quando todos os itens estiverem verdes:</p>
+      <ul>
+        <li>Todos os itens respondidos, e N/A com justificativa.</li>
+        <li>Notas dos quatro eixos, com justificativa.</li>
+        <li>Nome completo de quem atendeu.</li>
+        <li>Contagem de todos os produtos.</li>
+        <li>Outros locais com nome, resposta e foto.</li>
+        <li>Fotos obrigatórias.</li>
+        <li>Ocorrências com local e descrição.</li>
+        <li>Ocorrências críticas comunicadas.</li>
+      </ul>
+      <p>Se algo ficar vermelho, toque na etapa correspondente, complete e volte.</p>
+      <div class="box atencao"><b>Depois de enviada, você não edita mais.</b>A auditoria só volta para você se a administração <b>devolver</b> para correção.</div>
+    </div>
+    <figure class="fig"><img src="21-revisao.png"><figcaption>Revisão por etapa</figcaption></figure>
+    <figure class="fig"><img src="22-enviar.png"><figcaption>Conferência e envio</figcaption></figure>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="sec">
+  <h2>9. Depois de enviar</h2>
+  <div class="bloco">
+    <div>
+      <p>Ao enviar, abre o <b>relatório da auditoria</b>: índice PEX, notas dos eixos, respostas, fotos e ocorrências. Você pode gerar o <b>PDF</b> pelo botão no topo.</p>
+      <p>Em <b>Auditorias › Minhas auditorias</b>, cada uma mostra a situação:</p>
+      <table>
+        <tr><td style="width:40mm"><span class="tag">Em preenchimento</span></td><td>Ainda não enviada. Toque para continuar.</td></tr>
+        <tr><td><span class="tag t-info">Aguardando validação</span></td><td>Enviada. A administração ainda vai analisar.</td></tr>
+        <tr><td><span class="tag t-info">Em validação</span></td><td>A administração está analisando.</td></tr>
+        <tr><td><span class="tag t-warn">Devolvida ao auditor</span></td><td>Precisa de correção sua (capítulo 10).</td></tr>
+        <tr><td><span class="tag t-warn">Ação corretiva</span></td><td>Validada, com ações em andamento no parque.</td></tr>
+        <tr><td><span class="tag t-c">Validado</span> / <span class="tag t-c">Encerrado</span></td><td>Concluída pela administração.</td></tr>
+      </table>
+    </div>
+    <figure class="fig"><img src="23-relatorio.png"><figcaption>Relatório após o envio</figcaption></figure>
+  </div>
+
+  <h2 style="margin-top:4mm">10. Auditoria devolvida</h2>
+  <div class="bloco dois">
+    <div>
+      <p>Se a administração precisar de algo a mais (uma foto que faltou, um dado a corrigir), ela <b>devolve</b> a auditoria. Você recebe um <b>aviso</b>, e a auditoria aparece com o selo <span class="tag t-warn">Devolvida ao auditor</span>.</p>
+      <p><span class="num">1</span>Toque no aviso ou na auditoria.</p>
+      <p><span class="num">2</span>No topo aparece em laranja <b>o que a administração pediu</b>.</p>
+      <p><span class="num">3</span>Corrija o que foi pedido e vá até <b>Enviar</b> para reenviar.</p>
+    </div>
+    <figure class="fig"><img src="26-lista-devolvida.png"><figcaption>Selo Devolvida na lista</figcaption></figure>
+    <figure class="fig"><img src="28-devolvida-editor.png"><figcaption>O pedido da administração</figcaption></figure>
+  </div>
+</section>
+
+<!-- 11 / 12 -->
+<section class="sec">
+  <h2>11. Avisos</h2>
+  <div class="bloco">
+    <div>
+      <p>Em <b>Avisos</b> chegam as mensagens sobre as suas auditorias, por exemplo quando uma é <b>devolvida</b> para correção. Os avisos novos ficam destacados, com um ponto verde, e o número vermelho na barra de baixo mostra quantos você não leu.</p>
+      <ul>
+        <li>Toque num aviso para abrir a auditoria dele.</li>
+        <li><b>Não lidas</b> filtra só os que você ainda não viu.</li>
+        <li><b>Marcar todas como lidas</b> limpa o contador.</li>
+      </ul>
+      <p class="small">Os avisos aparecem quando o app está aberto. Abra o PEX de vez em quando para conferir.</p>
+    </div>
+    <figure class="fig"><img src="27-avisos.png"><figcaption>Avisos</figcaption></figure>
+  </div>
+  <h2 style="margin-top:2mm">12. Sem internet</h2>
+  <div class="bloco">
+    <div>
+      <p>Muitos parques têm sinal fraco. Pode continuar normalmente: o app <b>guarda tudo no celular</b>, inclusive as fotos, e envia sozinho quando a internet voltar. Dá até para enviar a auditoria sem sinal: ela sobe assim que o celular conectar.</p>
+      <p>Fique de olho no indicador no alto da tela:</p>
+      <table>
+        <tr><td style="width:46mm"><b>Online</b> / <b>Sincronizado</b></td><td>Tudo já está no servidor.</td></tr>
+        <tr><td><b>Offline · 1 pendente(s)</b></td><td>Sem internet. As alterações estão guardadas no celular.</td></tr>
+        <tr><td><b>Sincronizando…</b></td><td>A internet voltou e o app está enviando.</td></tr>
+        <tr><td><b>Erro de sincronização</b></td><td>Toque no indicador para tentar de novo. Se continuar, avise a administração.</td></tr>
+      </table>
+      <p>No rodapé da auditoria aparece <b>Salvo no aparelho</b> enquanto estiver sem internet.</p>
+      <div class="box atencao"><b>Importante</b>Enquanto houver pendências, <b>não saia da conta, não desinstale o app e não limpe os dados do navegador</b>. Espere aparecer <b>Sincronizado</b>.</div>
+    </div>
+    <figure class="fig"><img src="30-offline.png"><figcaption>Preenchendo sem internet</figcaption></figure>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="sec">
+  <h2>13. Dúvidas comuns</h2>
+  <table>
+    <tr><th style="width:62mm">Situação</th><th>O que fazer</th></tr>
+    <tr><td>Criei o acesso e o app não abre</td><td>A administração ainda não liberou. Peça a liberação e toque em <b>Já fui liberado</b>.</td></tr>
+    <tr><td>Esqueci a senha</td><td>Na tela Entrar, toque em <b>Esqueci a senha</b> e siga o e-mail. Se não chegar, peça uma senha provisória à administração.</td></tr>
+    <tr><td>O botão Enviar não funciona</td><td>Algum item da lista de conferência está vermelho. Complete o que falta (muitas vezes é uma foto obrigatória, uma nota sem justificativa ou um N/A sem motivo).</td></tr>
+    <tr><td>Apareceu "Auditoria incompleta, não pode ser enviada"</td><td>O servidor encontrou algo faltando. A mensagem diz o quê. Complete e envie de novo; a auditoria continua salva.</td></tr>
+    <tr><td>Fechei o app no meio da auditoria</td><td>Nada se perde. Abra <b>Auditorias</b> e toque na que está <b>Em preenchimento</b>.</td></tr>
+    <tr><td>Respondi errado</td><td>Antes de enviar, toque em outra resposta ou apague o texto e escreva de novo. Depois de enviada, só se a administração devolver.</td></tr>
+    <tr><td>A câmera não abre</td><td>Permita o acesso à câmera para o navegador (ou para o app PEX) nas configurações do celular.</td></tr>
+    <tr><td>Parque ou loja não aparece na lista</td><td>Peça à administração para cadastrar.</td></tr>
+    <tr><td>Estou sem internet</td><td>Continue normalmente (capítulo 12). Não saia da conta até aparecer <b>Sincronizado</b>.</td></tr>
+  </table>
+  <div class="box dica" style="margin-top:6mm"><b>Resumo da visita</b>
+    1. Iniciar auditoria no local › 2. Cliente oculto, sem se identificar, com o nome de quem atendeu › 3. Identificar-se ao líder › 4. Exposição, Estoque, Limpeza e Estrutura, com fotos e notas › 5. Ocorrências › 6. Revisar e enviar.</div>
+</section>
+
+</body></html>
