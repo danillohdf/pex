@@ -32,12 +32,14 @@ Rodar sempre na ordem. Todas são compatíveis com os dados existentes e nenhuma
 | `007_notificacoes.sql` | Notificações automáticas e verificação de prazos |
 | `008_seguranca_final.sql` | Fim do "primeiro cadastro vira master"; validação do envio no servidor |
 | `009_desempenho_rls.sql` | Mesmas regras de acesso, escritas para rodar mais rápido; índices |
+| `010_senha_minima.sql` | Senha provisória do master com no mínimo 8 caracteres |
 
 ## Configuração do Supabase
 
 Em **Authentication**:
 - **Sign In / Providers › Email**: deixe **Confirm email** desligado. A liberação de cada pessoa é feita pela administração dentro do app.
 - **URL Configuration › Site URL**: `https://danillohdf.github.io/pex/` (necessário para "Esqueci a senha").
+- **Sign In / Providers › Email › Minimum password length**: 8 (o app já exige 8 para senha nova).
 - **Leaked password protection** (bloquear senhas vazadas): só existe nos planos pagos do Supabase (Pro em diante). No plano gratuito fica desligado.
 
 A chave anon pode ficar no app: quem protege os dados são as regras do banco. **Nunca** coloque a chave `service_role` em nenhum arquivo do app.

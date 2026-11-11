@@ -940,7 +940,7 @@ function telaLogin(modo, aviso){
     <div class="card"><form id="f-auth" data-modo="${modo}" novalidate>
       ${modo === 'criar' ? `<label class="f">Nome completo<input type="text" id="a-nome" autocomplete="name" required></label>` : ''}
       <label class="f">E-mail<input type="email" id="a-email" autocomplete="email" inputmode="email" autocapitalize="off" required></label>
-      ${modo !== 'recuperar' ? `<label class="f">Senha<span class="pw"><input type="password" id="a-senha" autocomplete="${modo === 'criar' ? 'new-password' : 'current-password'}" minlength="6" required><button type="button" data-act="pw-ver" aria-label="Mostrar senha">${ic('olho')}</button></span></label>` : ''}
+      ${modo !== 'recuperar' ? `<label class="f">Senha<span class="pw"><input type="password" id="a-senha" autocomplete="${modo === 'criar' ? 'new-password' : 'current-password'}"${modo === 'criar' ? ' minlength="8"' : ''} required><button type="button" data-act="pw-ver" aria-label="Mostrar senha">${ic('olho')}</button></span></label>` : ''}
       <p class="note" id="a-err" role="alert" hidden></p>
       <button class="btn pri block" type="submit" id="a-btn">${modo === 'entrar' ? 'Entrar' : modo === 'criar' ? 'Criar acesso' : 'Enviar link'}</button>
     </form></div>
@@ -964,7 +964,7 @@ function telaAguardando(p){
 
 function telaNovaSenha(){
   $('#main').innerHTML = `<div class="auth-wrap"><div class="auth"><div class="auth-hero"><span class="mark"><b>PEX</b></span><div><h1>Nova senha</h1><p class="lead">Escolha uma nova senha para entrar na Plataforma PEX.</p></div></div>
-    <div class="card"><form id="f-senha" novalidate><label class="f">Nova senha (mínimo 6 caracteres)<span class="pw"><input type="password" id="s-nova" autocomplete="new-password" minlength="6" required><button type="button" data-act="pw-ver" aria-label="Mostrar senha">${ic('olho')}</button></span></label>
+    <div class="card"><form id="f-senha" novalidate><label class="f">Nova senha (mínimo 8 caracteres)<span class="pw"><input type="password" id="s-nova" autocomplete="new-password" minlength="8" required><button type="button" data-act="pw-ver" aria-label="Mostrar senha">${ic('olho')}</button></span></label>
     <p class="note" id="s-err" role="alert" hidden></p><button class="btn pri block" type="submit">Salvar nova senha</button></form></div></div></div>`;
 }
 
@@ -973,7 +973,7 @@ function msgAuth(e){
   if(/invalid login credentials/.test(m)) return 'E-mail ou senha incorretos.';
   if(/email not confirmed/.test(m)) return 'Confirme seu e-mail pelo link que enviamos antes de entrar.';
   if(/already registered|already been registered/.test(m)) return 'Este e-mail já tem cadastro. Use "Já tenho acesso" ou "Esqueci a senha".';
-  if(/password should be|at least 6/.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
+  if(/password should be|at least \d+ char/i.test(m)) return 'A senha precisa ter pelo menos 8 caracteres.';
   if(/rate limit|too many|security purposes/.test(m) && !/email rate limit/.test(m)) return 'Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.';
   if(/email address .* is invalid|invalid email|unable to validate email/.test(m)) return 'Este e-mail foi recusado. Confira se está correto ou use outro endereço.';
   if(/email rate limit/.test(m)) return 'O servidor atingiu o limite de e-mails de confirmação. Avise a administração do PEX para liberar o seu acesso.';
@@ -994,7 +994,8 @@ document.addEventListener('submit', async e => {
     const falha = m => { err.textContent = m; err.hidden = false; err.style.color = 'var(--bad)'; btn.disabled = false; };
     if(!/^\S+@\S+\.\S+$/.test(email)) return falha('Digite um e-mail válido.');
     if(modo === 'criar' && nome.length < 3) return falha('Digite seu nome completo.');
-    if(modo !== 'recuperar' && senha.length < 6) return falha('A senha precisa ter pelo menos 6 caracteres.');
+    if(modo === 'criar' && senha.length < 8) return falha('A senha precisa ter pelo menos 8 caracteres.');
+    if(modo === 'entrar' && !senha) return falha('Digite a sua senha.');
     btn.disabled = true; err.hidden = true;
     try{
       if(modo === 'entrar'){ await PEX.entrar(email, senha); window.__pexEntrou && window.__pexEntrou(); }
@@ -1009,7 +1010,7 @@ document.addEventListener('submit', async e => {
   if(f.id === 'f-senha'){
     e.preventDefault();
     const s = $('#s-nova').value; const err = $('#s-err');
-    if(s.length < 6){ err.textContent = 'A senha precisa ter pelo menos 6 caracteres.'; err.hidden = false; return; }
+    if(s.length < 8){ err.textContent = 'A senha precisa ter pelo menos 8 caracteres.'; err.hidden = false; return; }
     try{ await PEX.novaSenha(s); history.replaceState(null, '', location.pathname); toast('Senha alterada.'); window.__pexSenhaOk && window.__pexSenhaOk(); }
     catch(x){ err.textContent = msgAuth(x); err.hidden = false; }
   }
@@ -1104,7 +1105,7 @@ function usuarioSheet(id){
       <div class="sheet-sec"><h3>Nome</h3><input type="text" id="u-nome" value="${esc(u.nome || '')}" aria-label="Nome"><button class="btn block" type="button" data-act="usr-nome" data-id="${esc(u.id)}">Salvar nome</button></div>`
       : `<div class="banner info">${ic('info')}<div>${porque}</div></div>`}
     ${!u.confirmado ? `<div class="sheet-sec"><h3>E-mail não confirmado</h3><p class="note" style="margin:0">Enquanto o e-mail não for confirmado, essa pessoa não consegue entrar.</p><button class="btn block" type="button" data-act="usr-confirmar" data-id="${esc(u.id)}">${ic('email')}Confirmar e-mail manualmente</button></div>` : ''}
-    ${souMaster && !eu && u.papel !== 'master' ? `<div class="sheet-sec"><h3>Senha provisória</h3><p class="note" style="margin:0">Para quem esqueceu a senha. Passe a nova senha à pessoa pessoalmente.</p><input type="text" id="u-senha" placeholder="Nova senha (mínimo 6 caracteres)" autocomplete="off" autocapitalize="off"><button class="btn block" type="button" data-act="usr-senha" data-id="${esc(u.id)}">${ic('chave')}Definir senha provisória</button></div>
+    ${souMaster && !eu && u.papel !== 'master' ? `<div class="sheet-sec"><h3>Senha provisória</h3><p class="note" style="margin:0">Para quem esqueceu a senha. Passe a nova senha à pessoa pessoalmente.</p><input type="text" id="u-senha" placeholder="Nova senha (mínimo 8 caracteres)" autocomplete="off" autocapitalize="off"><button class="btn block" type="button" data-act="usr-senha" data-id="${esc(u.id)}">${ic('chave')}Definir senha provisória</button></div>
     <div class="sheet-sec"><h3>Excluir login</h3><p class="note" style="margin:0">Remove o acesso definitivamente.${u.visitas ? ` As ${u.visitas} visita(s) dessa pessoa continuam no histórico, com o nome dela.` : ''}</p><button class="btn danger block" type="button" data-act="usr-excluir" data-id="${esc(u.id)}">${ic('lixo')}Excluir login</button></div>` : ''}
     <button class="btn ghost block" type="button" data-act="sheet-close">Fechar</button>
   </div>`);
@@ -1172,7 +1173,7 @@ async function acaoUsuario(a, b){
     if(a === 'usr-papel'){ const r = $('input[name="u-papel"]:checked'); if(!r || r.value === u.papel){ b.disabled = false; return; } await PEX.mudarPerfil(id, {papel: r.value}); await fim('Permissão atualizada: ' + PAPEL[r.value][0] + '.'); }
     else if(a === 'usr-nome'){ const n = $('#u-nome').value.trim(); if(n.length < 2){ toast('Digite o nome.'); b.disabled = false; return; } await PEX.mudarPerfil(id, {nome: n}); await fim('Nome atualizado.'); }
     else if(a === 'usr-confirmar'){ await PEX.confirmarEmail(id); await fim('E-mail confirmado. A pessoa já pode entrar.'); }
-    else if(a === 'usr-senha'){ const s = $('#u-senha').value; if(s.length < 6){ toast('A senha precisa ter pelo menos 6 caracteres.'); b.disabled = false; return; } await PEX.definirSenha(id, s); await fim('Senha provisória definida.'); }
+    else if(a === 'usr-senha'){ const s = $('#u-senha').value; if(s.length < 8){ toast('A senha precisa ter pelo menos 8 caracteres.'); b.disabled = false; return; } await PEX.definirSenha(id, s); await fim('Senha provisória definida.'); }
     else if(a === 'usr-excluir'){
       if(!b.classList.contains('armed')){ b.classList.add('armed'); b.innerHTML = ic('lixo') + 'Toque de novo para excluir ' + esc((u.nome || u.email).split(' ')[0]); b.disabled = false; setTimeout(() => { if(b.isConnected){ b.classList.remove('armed'); b.innerHTML = ic('lixo') + 'Excluir login'; } }, 5000); return; }
       await PEX.excluirUsuario(id); await fim('Login excluído.');

@@ -36,5 +36,6 @@ O painel do Supabase lista 14 funções "SECURITY DEFINER" que usuários logados
 
 ## Configurações do painel do Supabase
 
+- **Senha mínima de 8 caracteres** (desde 11/11/2026): o app exige 8 no cadastro, na troca de senha e na senha provisória (esta também no banco, migration 010). No painel: Authentication › Sign In / Providers › Email › Minimum password length = 8. Senhas antigas mais curtas continuam entrando; o limite vale quando a senha é criada ou trocada.
 - **Leaked password protection** (bloquear senhas vazadas): só existe nos planos pagos (Pro em diante). No plano gratuito fica desligado; o Supabase recusa ativar.
 - Token do Netlify: o site `pex-eventokids` foi apagado em 11/11/2026. O token pessoal usado na publicação antiga foi revogado.
