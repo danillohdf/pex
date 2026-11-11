@@ -33,6 +33,7 @@ Rodar sempre na ordem. Todas são compatíveis com os dados existentes e nenhuma
 | `008_seguranca_final.sql` | Fim do "primeiro cadastro vira master"; validação do envio no servidor |
 | `009_desempenho_rls.sql` | Mesmas regras de acesso, escritas para rodar mais rápido; índices |
 | `010_senha_minima.sql` | Senha provisória do master com no mínimo 8 caracteres |
+| `011_lojas_elite_fofissimo.sql` | Lojas Elite e Fofíssimo (sócio Helbert) |
 
 ## Configuração do Supabase
 
