@@ -2,7 +2,7 @@
 
 App do Programa de Excelência e Auditoria (Evento Kids). Auditores visitam os parques e preenchem a auditoria em 8 etapas (com fotos, notas e ocorrências). A administração valida, transforma os problemas em ações na Central de Pendências e acompanha tudo pelo dashboard. Funciona no celular (instalável) e no computador, com banco no Supabase e modo offline.
 
-Endereço publicado: **https://danillohdf.github.io/pex/** (branch `main`).
+Endereço publicado: **https://danillohdf.github.io/pex/** (branch `main`, versão 2.0).
 
 ## O que tem na pasta
 

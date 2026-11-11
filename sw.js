@@ -1,6 +1,6 @@
 /* Plataforma PEX · service worker: guarda a "casca" do app para abrir rápido e sem sinal.
    Os dados (Supabase) nunca passam pelo cache. Ao publicar mudanças, aumente VERSAO. */
-const VERSAO = 'pex-v13-dev';
+const VERSAO = 'pex-v13';
 const CASCA = ['./', 'index.html', 'css/pex.css', 'config.js', 'js/supabase.min.js', 'js/backend.js', 'manifest.webmanifest', 'icons/icon.svg', 'icons/icon-192.png', 'icons/apple-touch-icon.png'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(VERSAO).then(c => c.addAll(CASCA)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== VERSAO).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
