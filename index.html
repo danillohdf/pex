@@ -649,7 +649,7 @@ async function enviar(){
   d.enviadoEm = Date.now();
   clearTimeout(S.saveT);
   try{ const r = await S.db.doc('visitas/' + S.edit.id).set(clone(d)); const id = S.edit.id; S.edit = null; toast(r && r.pendente ? 'Sem internet: a auditoria está guardada no aparelho e será enviada sozinha quando a conexão voltar.' : 'Auditoria enviada para validação.', r && r.pendente ? '' : 'ok'); openReport(id); }
-  catch(err){ d.enviadoEm = null; toast('Não foi possível enviar. Verifique a conexão e tente de novo.'); }
+  catch(err){ d.enviadoEm = null; const m = err && /Auditoria incompleta/.test(err.message || '') ? err.message : 'Não foi possível enviar. Verifique a conexão e tente de novo.'; toast(m, 'bad'); }
 }
 
 /* ===================== Fotos ===================== */

@@ -145,13 +145,27 @@
     if(!guardou) return gravarVisitaDireto(c, id, data).then(() => ({sincronizado: true}));
     const r = await sincronizarUm(id);
     if(r === true) return {sincronizado: true};
-    if(r && !r.rede) throw r.erro;
+    if(r && !r.rede){
+      // envio recusado pelo banco (auditoria incompleta): a cópia local volta a ser rascunho
+      if(data && data.enviadoEm && /Auditoria incompleta/.test((r.erro && r.erro.message) || '')){
+        const rasc = {...data, enviadoEm: null}; c.rows.set(id, rasc); c.emit();
+        const at = await IDB.get('fila', id).catch(() => null); if(at) await IDB.put('fila', id, {...at, data: rasc}).catch(() => {});
+        net.erro = null; avisar(); sincronizarUm(id);
+      }
+      throw r.erro;
+    }
     return {pendente: true};
   }
   async function gravarVisitaDireto(c, id, data){
     let {data: out, error} = await sb.from(c.tabela).update({data}).eq('id', id).select('id,data,atualizado_em');
-    if(!error && (!out || !out.length)){ ({data: out, error} = await sb.from(c.tabela).insert({id, data}).select('id,data,atualizado_em')); if(error && error.code === '23505') throw erro({code: '42501', message: 'permission denied'}); }
-    if(error) throw Object.assign(erro(error), {original: error});
+    if(!error && (!out || !out.length)){
+      // auditoria que ainda não existe no servidor (criada sem internet): entra como rascunho e, se já foi enviada, é enviada em seguida
+      const rasc = data && data.enviadoEm ? {...data, enviadoEm: null} : data;
+      ({data: out, error} = await sb.from(c.tabela).insert({id, data: rasc}).select('id,data,atualizado_em'));
+      if(error && error.code === '23505') throw erro({code: '42501', message: 'permission denied'});
+      if(!error && rasc !== data) ({data: out, error} = await sb.from(c.tabela).update({data}).eq('id', id).select('id,data,atualizado_em'));
+    }
+    if(error) throw Object.assign(erroMsg(error), {original: error});
     if(!out || !out.length) throw erro({code: '42501', message: 'permission denied'});
     return out[0];
   }
