@@ -37,4 +37,4 @@ O painel do Supabase lista 14 funções "SECURITY DEFINER" que usuários logados
 ## Configurações do painel do Supabase
 
 - **Leaked password protection** (bloquear senhas vazadas): só existe nos planos pagos (Pro em diante). No plano gratuito fica desligado; o Supabase recusa ativar.
-- Token do Netlify: o site `pex-eventokids` foi apagado em 11/11/2026. O token pessoal usado na publicação antiga deve ser revogado no painel do Netlify (User settings › Applications › Personal access tokens).
+- Token do Netlify: o site `pex-eventokids` foi apagado em 11/11/2026. O token pessoal usado na publicação antiga foi revogado.

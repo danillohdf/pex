@@ -50,7 +50,7 @@ No banco real: regras de acesso de auditor e master conferidas após cada migrat
 ## Situação final
 1. Publicado em `main` em 11/11/2026 (versão `pex-v13`).
 2. Leaked password protection: indisponível no plano gratuito do Supabase.
-3. Site antigo do Netlify apagado; falta só revogar o token no painel do Netlify.
+3. Netlify desativado: site antigo apagado e token revogado.
 
 ## Limitações conhecidas
 - Notificações aparecem dentro do app (não há push no celular com o app fechado).
